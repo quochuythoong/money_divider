@@ -101,13 +101,15 @@ money-divider/
 
 ---
 
-## Building for Production / Docker (later)
+## Run with Docker (no Node.js needed)
 
 ```bash
-npm run build
-# Serves the static files in dist/ with any HTTP server, e.g.:
-npx serve dist
+docker build \
+  --build-arg VITE_SUPABASE_URL=https://xxxx.supabase.co \
+  --build-arg VITE_SUPABASE_ANON_KEY=your_anon_key \
+  -t money-divider .
+
+docker run -p 8080:80 money-divider
 ```
 
-To Dockerize, use a standard `nginx` image serving the `dist/` folder and inject
-the `VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY` as build args.
+Open http://localhost:8080
