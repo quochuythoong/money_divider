@@ -13,7 +13,7 @@ const BLANK = {
   notes:          '',
 }
 
-export default function BillsTab({ sessionId, participants, bills, reload, loading }) {
+export default function BillsTab({ sessionId, participants, bills, reload, loading, isGuest, guestApi }) {
   const [showModal, setShowModal]   = useState(false)
   const [editTarget, setEditTarget] = useState(null)
   const [form, setForm]             = useState(BLANK)
@@ -64,48 +64,38 @@ export default function BillsTab({ sessionId, participants, bills, reload, loadi
     if (!validate()) return
     setSaving(true)
     try {
-      if (editTarget) {
-        // Update bill row
-        const { error: billErr } = await supabase
-          .from('bills')
-          .update({
-            title:    form.title.trim(),
-            amount:   +form.amount,
-            payer_id: form.payerId,
-            category: form.category,
-            notes:    form.notes.trim() || null,
-          })
-          .eq('id', editTarget.id)
-        if (billErr) throw billErr
-
-        // Replace bill_participants
-        await supabase.from('bill_participants').delete().eq('bill_id', editTarget.id)
-        const rows = form.participantIds.map(pid => ({ bill_id: editTarget.id, participant_id: pid }))
-        const { error: bpErr } = await supabase.from('bill_participants').insert(rows)
-        if (bpErr) throw bpErr
+      if (isGuest) {
+        const billData = {
+          title: form.title.trim(), amount: +form.amount, payer_id: form.payerId,
+          category: form.category, notes: form.notes.trim() || null,
+          participant_ids: form.participantIds,
+        }
+        if (editTarget) guestApi.updateBill(editTarget.id, billData)
+        else            guestApi.addBill(billData)
       } else {
-        // Insert bill
-        const { data: inserted, error: billErr } = await supabase
-          .from('bills')
-          .insert({
-            session_id: sessionId,
-            title:      form.title.trim(),
-            amount:     +form.amount,
-            payer_id:   form.payerId,
-            category:   form.category,
-            notes:      form.notes.trim() || null,
-          })
-          .select()
-          .single()
-        if (billErr) throw billErr
-
-        const rows = form.participantIds.map(pid => ({ bill_id: inserted.id, participant_id: pid }))
-        const { error: bpErr } = await supabase.from('bill_participants').insert(rows)
-        if (bpErr) throw bpErr
+        if (editTarget) {
+          const { error: billErr } = await supabase.from('bills').update({
+            title: form.title.trim(), amount: +form.amount, payer_id: form.payerId,
+            category: form.category, notes: form.notes.trim() || null,
+          }).eq('id', editTarget.id)
+          if (billErr) throw billErr
+          await supabase.from('bill_participants').delete().eq('bill_id', editTarget.id)
+          const { error: bpErr } = await supabase.from('bill_participants').insert(
+            form.participantIds.map(pid => ({ bill_id: editTarget.id, participant_id: pid }))
+          )
+          if (bpErr) throw bpErr
+        } else {
+          const { data: inserted, error: billErr } = await supabase.from('bills').insert({
+            session_id: sessionId, title: form.title.trim(), amount: +form.amount,
+            payer_id: form.payerId, category: form.category, notes: form.notes.trim() || null,
+          }).select().single()
+          if (billErr) throw billErr
+          const { error: bpErr } = await supabase.from('bill_participants').insert(
+            form.participantIds.map(pid => ({ bill_id: inserted.id, participant_id: pid }))
+          )
+          if (bpErr) throw bpErr
+        }
       }
-
-      await reload()
-      close()
     } catch (e) {
       setErrors(err => ({ ...err, _server: e.message }))
     } finally {
@@ -116,8 +106,11 @@ export default function BillsTab({ sessionId, participants, bills, reload, loadi
   // ── Delete ───────────────────────────────────────────────────────────────────
   const confirmDelete = async () => {
     try {
-      const { error } = await supabase.from('bills').delete().eq('id', confirmDel.id)
-      if (error) throw error
+      if (isGuest) guestApi.deleteBill(confirmDel.id)
+      else {
+        const { error } = await supabase.from('bills').delete().eq('id', confirmDel.id)
+        if (error) throw error
+      }
       await reload()
     } catch (e) {
       alert(e.message)

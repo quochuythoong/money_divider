@@ -3,7 +3,7 @@ import { supabase } from '../lib/supabase.js'
 import { G, AVATAR_COLORS, btnBase } from '../styles/theme.js'
 import { Modal, Input, Avatar, Empty, Confirm, Spinner } from '../components/index.jsx'
 
-export default function ParticipantsTab({ sessionId, participants, reload, loading }) {
+export default function ParticipantsTab({ sessionId, participants, reload, loading, isGuest, guestApi }) {
   const [showModal, setShowModal]   = useState(false)
   const [editTarget, setEditTarget] = useState(null)   // participant object | null
   const [name, setName]             = useState('')
@@ -30,17 +30,17 @@ export default function ParticipantsTab({ sessionId, participants, reload, loadi
 
     setSaving(true)
     try {
-      if (editTarget) {
-        const { error } = await supabase
-          .from('participants')
-          .update({ name: trimmed })
-          .eq('id', editTarget.id)
-        if (error) throw error
+      if (isGuest) {
+        if (editTarget) guestApi.updateParticipant(editTarget.id, trimmed)
+        else            guestApi.addParticipant(trimmed)
       } else {
-        const { error } = await supabase
-          .from('participants')
-          .insert({ session_id: sessionId, name: trimmed })
-        if (error) throw error
+        if (editTarget) {
+          const { error } = await supabase.from('participants').update({ name: trimmed }).eq('id', editTarget.id)
+          if (error) throw error
+        } else {
+          const { error } = await supabase.from('participants').insert({ session_id: sessionId, name: trimmed })
+          if (error) throw error
+        }
       }
       await reload()
       close()
@@ -55,11 +55,11 @@ export default function ParticipantsTab({ sessionId, participants, reload, loadi
   const confirmDelete = async () => {
     if (!confirmDel) return
     try {
-      const { error } = await supabase
-        .from('participants')
-        .delete()
-        .eq('id', confirmDel.id)
-      if (error) throw error
+      if (isGuest) guestApi.deleteParticipant(confirmDel.id)
+      else {
+        const { error } = await supabase.from('participants').delete().eq('id', confirmDel.id)
+        if (error) throw error
+      }
       await reload()
     } catch (e) {
       alert('Could not delete – this person may be referenced by existing bills.')
