@@ -8,7 +8,7 @@ export async function signUp(username, password) {
     email:    fake(username),
     password,
   })
-  if (error) throw error
+  if (error) throw new Error(error.message.replace(fake(username), `"${username}"`))
   return data.user
 }
 
@@ -17,7 +17,7 @@ export async function signIn(username, password) {
     email:    fake(username),
     password,
   })
-  if (error) throw error
+  if (error) throw new Error(error.message.replace(fake(username), `"${username}"`))
   return data.user
 }
 

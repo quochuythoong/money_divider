@@ -21,7 +21,7 @@ export default function AuthScreen({ onGuest }) {
       else                   await signIn(u, password)
       // onAuthChange in App.jsx picks up the new session automatically
     } catch (e) {
-      setError(e.message.replace('@moneyivider.app', ''))
+      setError(e.message)
     } finally {
       setLoading(false)
     }
