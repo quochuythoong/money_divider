@@ -331,7 +331,7 @@ export default function App() {
         position:      'sticky',
         top:            0,
         zIndex:         50,
-        padding:        '0 20px',
+        padding:        '0 10px',
         paddingTop:     'env(safe-area-inset-top)',
       }}>
         <div style={{ maxWidth: 960, margin: '0 auto' }}>
