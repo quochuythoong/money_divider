@@ -1,115 +1,111 @@
 # MoneyDivider 💸
-
 Split expenses fairly across any group, with zero drama.
 
 ---
 
-## Quick Start (5 steps)
+## Option A — Use online
+If someone is hosting a live instance, just open the URL in your browser. No setup needed.
 
-### 1 – Install Node.js
-Download and install Node.js (v18 or later) from https://nodejs.org  
-Verify: `node -v`
+---
 
-### 2 – Create a Supabase project
-1. Go to https://supabase.com and sign up (free tier is fine).
-2. Click **New Project**, give it a name (e.g. "money-divider"), choose a region.
-3. Wait ~1 minute for it to provision.
+## Option B — Clone and run (developers)
 
-### 3 – Run the database schema
-1. In your Supabase dashboard, open **SQL Editor** → **New query**.
-2. Paste the contents of `supabase_schema.sql` (in this folder).
-3. Click **Run** (▶).
+**Requirements:** Node.js v18+ — download from nodejs.org
 
-### 4 – Configure credentials
 ```bash
-cp .env.example .env
-```
-Open `.env` and fill in the two values from your Supabase project:
-- **VITE_SUPABASE_URL** → Settings → API → Project URL
-- **VITE_SUPABASE_ANON_KEY** → Settings → API → Project API keys → `anon public`
-
-### 5 – Install, then run
-```bash
+git clone https://github.com/YOUR_USERNAME/money-divider.git
+cd money-divider
+cp .env.example .env        # then fill in your Supabase credentials (see below)
 npm install
-npm run dev
+npm run dev                 # open http://localhost:5173
 ```
-Open http://localhost:5173 in your browser.
 
 ---
 
-## All Commands
+## Option C — Clone and run with Docker (no Node.js needed)
 
-| Command           | What it does                              |
-|-------------------|-------------------------------------------|
-| `npm install`     | Download all dependencies (once)          |
-| `npm run dev`     | Start local dev server (hot reload)       |
-| `npm run build`   | Compile for production → `dist/` folder   |
-| `npm run preview` | Serve the production build locally        |
+**Requirements:** Docker — download from docker.com
+
+```bash
+git clone https://github.com/YOUR_USERNAME/money-divider.git
+cd money-divider
+docker build -t money-divider .
+docker run -p 8080:80 \
+  -e VITE_SUPABASE_URL=https://xxxx.supabase.co \
+  -e VITE_SUPABASE_ANON_KEY=your_key \
+  money-divider
+```
+Open http://localhost:8080
 
 ---
 
-## Project Structure
+## Supabase setup (required for Options B and C)
 
-```
+1. Go to **supabase.com** → sign up free → New Project
+2. Wait ~1 minute for it to provision
+3. Go to **SQL Editor** → New query → paste the contents of `supabase_schema.sql` → Run ▶
+4. Go to **Authentication → Providers → Email** → turn OFF "Confirm email" → Save
+5. Go to **Settings → API** → copy:
+   - Project URL
+   - anon public key
+
+For Option B, paste these into your `.env`:
+- VITE_SUPABASE_URL=https://xxxx.supabase.co
+- VITE_SUPABASE_ANON_KEY=your_anon_key
+
+For Option C, pass them as `-e` flags in the `docker run` command above.
+
+---
+
+## Commands reference
+
+| Command | What it does |
+|---|---|
+| `npm install` | Install dependencies (once) |
+| `npm run dev` | Local dev server at localhost:5173 |
+| `npm run build` | Build for production → `dist/` |
+| `npm run preview` | Preview the production build locally |
+
+---
+
+## How it works
+
+1. Create a **group** (e.g. "Weekend Trip")
+2. Add **people** — everyone who participated
+3. Add **bills** — who paid, who shares it, how much
+4. **Summary** — see each person's net balance
+5. **Settlement** — minimum transfers to settle all debts
+
+### Two modes
+- **Account mode** — create a username + password, your data is saved and private
+- **Single use** — no account needed, data is cleared when you close the tab
+
+---
+
+## Project structure
 money-divider/
-├── index.html              # HTML shell
-├── vite.config.js          # Vite config
+├── index.html
+├── vite.config.js
 ├── package.json
-├── .env.example            # ← copy to .env and fill in credentials
-├── supabase_schema.sql     # ← run this once in Supabase SQL editor
+├── Dockerfile
+├── nginx.conf
+├── docker-entrypoint.sh
+├── .env.example            ← copy to .env and fill in credentials
+├── supabase_schema.sql     ← run once in Supabase SQL editor
+├── README.md
 └── src/
-    ├── main.jsx            # React entry point
-    ├── App.jsx             # App shell + session management
+    ├── main.jsx
+    ├── App.jsx
     ├── lib/
-    │   └── supabase.js     # Supabase client singleton
-    ├── engine/
-    │   └── calculator.js   # Pure calculation logic (balances, settlements)
-    ├── styles/
-    │   └── theme.js        # Design tokens & shared styles
-    ├── components/
-    │   └── index.jsx       # Shared UI components
+        ├── supabase.js
+        └── auth.js
+    ├── engine/calculator.js
+    ├── styles/theme.js
+    ├── components/index.jsx
     └── tabs/
+        ├── AuthScreen.jsx
         ├── ParticipantsTab.jsx
         ├── BillsTab.jsx
         ├── SummaryTab.jsx
         └── SettlementTab.jsx
-```
 
----
-
-## How It Works
-
-1. **Create a group** (e.g. "Weekend Trip").
-2. **Add people** — anyone who participated.
-3. **Add bills** — for each expense:
-   - Who paid
-   - Who shares it (any subset of the group)
-   - Amount
-4. **Summary tab** — see each person's paid / owed / net balance.
-5. **Settlement tab** — get the minimum list of transfers to settle everything.
-
----
-
-## Database Schema
-
-| Table              | Purpose                                     |
-|--------------------|---------------------------------------------|
-| `sessions`         | A named expense group / trip                |
-| `participants`     | People in a session                         |
-| `bills`            | Expenses (amount, payer, category)          |
-| `bill_participants`| Which participants share each bill          |
-
----
-
-## Run with Docker (no Node.js needed)
-
-```bash
-docker build \
-  --build-arg VITE_SUPABASE_URL=https://xxxx.supabase.co \
-  --build-arg VITE_SUPABASE_ANON_KEY=your_anon_key \
-  -t money-divider .
-
-docker run -p 8080:80 money-divider
-```
-
-Open http://localhost:8080

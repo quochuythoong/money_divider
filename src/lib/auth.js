@@ -8,7 +8,11 @@ export async function signUp(username, password) {
     email:    fake(username),
     password,
   })
-  if (error) throw new Error(error.message.replace(fake(username), `"${username}"`))
+  if (error) {
+    if (error.message.includes('already registered') || error.message.includes('already exists'))
+      throw new Error(`Username "${username}" is already taken. Please choose another.`)
+    throw new Error(error.message.replace(fake(username), `"${username}"`))
+  }
   return data.user
 }
 
@@ -17,7 +21,11 @@ export async function signIn(username, password) {
     email:    fake(username),
     password,
   })
-  if (error) throw new Error(error.message.replace(fake(username), `"${username}"`))
+  if (error) {
+    if (error.message.includes('Invalid login credentials'))
+      throw new Error('Incorrect username or password.')
+    throw new Error(error.message.replace(fake(username), `"${username}"`))
+  }
   return data.user
 }
 

@@ -3,11 +3,51 @@ import { supabase } from './lib/supabase.js'
 import { onAuthChange, signOut } from './lib/auth.js'
 import { G, btnBase } from './styles/theme.js'
 import { Modal, Input, Spinner } from './components/index.jsx'
+import { isConfigured } from './lib/supabase.js'
 import AuthScreen      from './tabs/AuthScreen.jsx'
 import ParticipantsTab from './tabs/ParticipantsTab.jsx'
 import BillsTab        from './tabs/BillsTab.jsx'
 import SummaryTab      from './tabs/SummaryTab.jsx'
 import SettlementTab   from './tabs/SettlementTab.jsx'
+
+// ─── Setup guide (shown when .env is missing) ─────────────────────────────
+function SetupGuide() {
+  return (
+    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+      <div style={{ maxWidth: 520, width: '100%' }}>
+        <div style={{ textAlign: 'center', marginBottom: 32 }}>
+          <div style={{ fontSize: 44, marginBottom: 10 }}>⚙️</div>
+          <h1 style={{ fontFamily: "'DM Serif Display', Georgia, serif", fontSize: 28, color: G.text, marginBottom: 8 }}>
+            Setup Required
+          </h1>
+          <p style={{ color: G.textMuted, fontSize: 14 }}>
+            Supabase credentials are missing. Follow these steps:
+          </p>
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          {[
+            { n: 1, title: 'Create a free Supabase project', body: 'Go to supabase.com → New Project. Takes about 1 minute.' },
+            { n: 2, title: 'Run the database schema', body: 'In Supabase → SQL Editor, paste and run the contents of supabase_schema.sql from this repo.' },
+            { n: 3, title: 'Copy your credentials', body: 'Supabase → Settings → API → copy Project URL and anon public key.' },
+            { n: 4, title: 'Create your .env file', body: 'Copy .env.example → .env and paste your URL and key into the two variables.' },
+            { n: 5, title: 'Restart the app', body: 'Run npm run dev again. This screen will be replaced by the login page.' },
+          ].map(step => (
+            <div key={step.n} style={{ background: G.card, border: `1px solid ${G.border}`, borderRadius: 12, padding: '16px 20px', display: 'flex', gap: 16 }}>
+              <div style={{ width: 28, height: 28, borderRadius: '50%', background: G.accentGlow, border: `1px solid ${G.accent}44`, color: G.accent, fontWeight: 700, fontSize: 13, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{step.n}</div>
+              <div>
+                <div style={{ fontWeight: 600, color: G.text, marginBottom: 4 }}>{step.title}</div>
+                <div style={{ fontSize: 13, color: G.textMuted }}>{step.body}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+        <p style={{ textAlign: 'center', marginTop: 20, fontSize: 12, color: G.textDim }}>
+          Full instructions in README.md
+        </p>
+      </div>
+    </div>
+  )
+}
 
 const TABS = [
   { id: 'participants', label: 'People',     icon: '👥' },
@@ -227,6 +267,8 @@ export default function App() {
   }, [session, isGuest])
 
   useEffect(() => { reload() }, [reload])
+
+  if (!isConfigured) return <SetupGuide />
 
   // ── Still checking auth ────────────────────────────────────────────────────
   if (user === undefined) {

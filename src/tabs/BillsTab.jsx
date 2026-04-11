@@ -96,6 +96,8 @@ export default function BillsTab({ sessionId, participants, bills, reload, loadi
           if (bpErr) throw bpErr
         }
       }
+      await reload()
+      close()          
     } catch (e) {
       setErrors(err => ({ ...err, _server: e.message }))
     } finally {

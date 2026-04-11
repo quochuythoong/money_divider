@@ -1,19 +1,16 @@
-# Stage 1: build the Vite app
+# Stage 1: build (no secrets needed at build time)
 FROM node:20-alpine AS builder
 WORKDIR /app
 COPY package.json .
 RUN npm install
 COPY . .
-# These must be passed at build time: docker build --build-arg ...
-ARG VITE_SUPABASE_URL
-ARG VITE_SUPABASE_ANON_KEY
-ENV VITE_SUPABASE_URL=$VITE_SUPABASE_URL
-ENV VITE_SUPABASE_ANON_KEY=$VITE_SUPABASE_ANON_KEY
 RUN npm run build
 
-# Stage 2: serve with nginx
+# Stage 2: serve with nginx + runtime config injection
 FROM nginx:alpine
 COPY --from=builder /app/dist /usr/share/nginx/html
 COPY nginx.conf /etc/nginx/conf.d/default.conf
+COPY docker-entrypoint.sh /docker-entrypoint.sh
+RUN chmod +x /docker-entrypoint.sh
 EXPOSE 80
-CMD ["nginx", "-g", "daemon off;"]
+ENTRYPOINT ["/docker-entrypoint.sh"]
