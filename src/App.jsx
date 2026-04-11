@@ -331,13 +331,12 @@ export default function App() {
         position:      'sticky',
         top:            0,
         zIndex:         50,
-        padding:        '0 10px',
-        paddingTop:     'env(safe-area-inset-top)',
+        padding:        '0 20px',
       }}>
         <div style={{ maxWidth: 960, margin: '0 auto' }}>
 
           {/* Single row: logo + session name + Groups button */}
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 0 0', gap: 10 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: 'max(8px, env(safe-area-inset-top)) 0 0', gap: 10 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
               <div style={{ width: 30, height: 30, borderRadius: 7, background: G.accent, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15, fontWeight: 900, color: '#000', flexShrink: 0 }}>÷</div>
               <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, minWidth: 0 }}>
