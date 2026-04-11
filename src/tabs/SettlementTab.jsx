@@ -1,7 +1,9 @@
 import { useMemo, useState, useRef } from 'react'
-import { G, AVATAR_COLORS } from '../styles/theme.js'
+import { G, AVATAR_COLORS, btnBase } from '../styles/theme.js'
 import { Avatar, Empty } from '../components/index.jsx'
 import { calculateBalances, calculateSettlements, fmtVND } from '../engine/calculator.js'
+import { useIsMobile } from '../lib/useIsMobile.js'
+import html2canvas from 'html2canvas'
 
 export default function SettlementTab({ participants, bills }) {
   // ── NEW: checkbox state (set of settlement keys that are "done") ──────────
@@ -13,6 +15,10 @@ export default function SettlementTab({ participants, bills }) {
   // ── NEW: QR image ─────────────────────────────────────────────────────────
   const [qrImage, setQrImage] = useState(null)
   const fileInputRef = useRef()
+
+  // ── const ref ─────────────────────────────────────────────────────────────
+  const isMobile = useIsMobile()
+  const captureRef = useRef()
 
   // ── Existing: normalise bills ─────────────────────────────────────────────
   const normBills = useMemo(() =>
@@ -98,6 +104,25 @@ export default function SettlementTab({ participants, bills }) {
     reader.readAsDataURL(file)
   }
 
+  // ── NEW: save settlements as image ───────────────────────────────────────
+  const saveImage = async () => {
+    if (!captureRef.current) return
+    try {
+      const canvas = await html2canvas(captureRef.current, {
+        backgroundColor: G.bg,
+        scale: 2, // retina quality
+        useCORS: true,
+        logging: false,
+      })
+      const link = document.createElement('a')
+      link.download = 'settlements.png'
+      link.href = canvas.toDataURL('image/png')
+      link.click()
+    } catch (e) {
+      alert('Could not save image: ' + e.message)
+    }
+  }
+
   if (participants.length === 0) {
     return <Empty icon="💸" text="Add participants and bills to calculate settlements." />
   }
@@ -169,9 +194,18 @@ export default function SettlementTab({ participants, bills }) {
           {collectorId ? 'Turn off' : 'Turn on'}
         </button>
       </div>
-
-      {/* Settlements + QR side by side */}
-      <div style={{ display: 'flex', gap: 24, alignItems: 'flex-start', marginBottom: 32 }}>
+      
+      {/* Settlements + QR — side by side on desktop, stacked on mobile */}
+      <div ref={captureRef} style={{
+        display:          'flex',
+        flexDirection:    isMobile ? 'column' : 'row',
+        gap:              24,
+        alignItems:       'flex-start',
+        marginBottom:     32,
+        background:       G.bg,
+        padding:          16,
+        borderRadius:     12,
+      }}>
 
         {/* Left: settlement cards */}
         <div style={{ flex: 1, minWidth: 0 }}>
@@ -239,8 +273,8 @@ export default function SettlementTab({ participants, bills }) {
           )}
         </div>
 
-        {/* Right: QR code box */}
-        <div style={{ flexShrink: 0 }}>
+        {/* QR code box — right on desktop, bottom on mobile */}
+        <div style={{ flexShrink: 0, width: isMobile ? '100%' : 'auto', display: 'flex', flexDirection: 'column', gap: 10 }}>
           <p style={{ fontSize: 12, color: G.textMuted, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 10 }}>
             Bank QR Code
           </p>
@@ -248,7 +282,9 @@ export default function SettlementTab({ participants, bills }) {
           <div
             onClick={() => fileInputRef.current.click()}
             style={{
-              width: 260, height: 260,
+              width: isMobile ? '100%' : 260,
+              height: isMobile ? 220 : 260,
+              boxSizing: 'border-box',
               border: `2px dashed ${qrImage ? G.accent + '88' : G.border}`,
               borderRadius: 16, display: 'flex', flexDirection: 'column',
               alignItems: 'center', justifyContent: 'center',
@@ -280,7 +316,26 @@ export default function SettlementTab({ participants, bills }) {
               </>
             )}
           </div>
-        </div>
+
+          <button
+            onClick={saveImage}
+            style={{
+              ...btnBase,
+              width:          '100%',
+              background:     G.surface,
+              color:          G.accent,
+              border:         `1px solid ${G.accent}44`,
+              fontSize:       13,
+              display:        'flex',
+              alignItems:     'center',
+              justifyContent: 'center',
+              gap:            7,
+            }}
+          >
+            📷 Save as Image
+          </button>
+
+        </div>{/* end QR column */}
 
       </div>{/* end flex row */}
 

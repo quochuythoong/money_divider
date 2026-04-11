@@ -38,26 +38,34 @@ export function Modal({ title, onClose, children, width = 480 }) {
   return (
     <div
       style={{
-        position:   'fixed', inset: 0,
-        background: 'rgba(0,0,0,0.72)',
-        zIndex:     200,
-        display:    'flex', alignItems: 'center', justifyContent: 'center',
-        padding:    16,
+        position:       'fixed', inset: 0,
+        background:     'rgba(0,0,0,0.72)',
+        zIndex:         200,
+        display:        'flex',
+        flexDirection:  'column',
+        alignItems:     'center',
+        justifyContent: window.innerWidth < 768 ? 'flex-end' : 'center',
+        padding:        window.innerWidth < 768 ? 0 : 16,
         backdropFilter: 'blur(5px)',
       }}
       onClick={onClose}
     >
       <div
         style={{
-          background:   G.card,
-          border:       `1px solid ${G.borderHi}`,
-          borderRadius: 16,
-          padding:      28,
-          maxWidth:     width,
-          width:        '100%',
-          maxHeight:    '90vh',
-          overflowY:    'auto',
-          boxShadow:    '0 32px 80px rgba(0,0,0,0.7)',
+          background:    G.card,
+          border:        `1px solid ${G.borderHi}`,
+          borderRadius:  16,
+          padding:       '24px 18px',
+          maxWidth:      width,
+          width:         '100%',
+          maxHeight:     '85dvh',
+          overflowY:     'auto',
+          boxShadow:     '0 32px 80px rgba(0,0,0,0.7)',
+          // Mobile: stick to bottom like a sheet
+          alignSelf:     window.innerWidth < 768 ? 'flex-end' : 'center',
+          borderBottomLeftRadius:  window.innerWidth < 768 ? 0 : 16,
+          borderBottomRightRadius: window.innerWidth < 768 ? 0 : 16,
+          marginBottom:  0,
         }}
         onClick={e => e.stopPropagation()}
       >
