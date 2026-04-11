@@ -336,38 +336,41 @@ export default function App() {
       }}>
         <div style={{ maxWidth: 960, margin: '0 auto' }}>
 
-          {/* Row 1: Logo + Groups button always top right */}
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 0 0' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <div style={{ width: 30, height: 30, borderRadius: 7, background: G.accent, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15, fontWeight: 900, color: '#000' }}>÷</div>
-              <div>
-                <span style={{ fontFamily: "'DM Serif Display', Georgia, serif", fontWeight: 700, fontSize: 17, color: G.text }}>
+          {/* Single row: logo + session name + Groups button */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 0 0', gap: 10 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
+              <div style={{ width: 30, height: 30, borderRadius: 7, background: G.accent, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15, fontWeight: 900, color: '#000', flexShrink: 0 }}>÷</div>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, minWidth: 0 }}>
+                <span style={{ fontFamily: "'DM Serif Display', Georgia, serif", fontWeight: 700, fontSize: 17, color: G.text, whiteSpace: 'nowrap' }}>
                   Money<span style={{ color: G.accent }}>Divider</span>
                 </span>
-                {!isMobile && <span style={{ marginLeft: 10, fontSize: 12, color: G.textMuted }}>/ {session.name}</span>}
+                <span style={{ fontSize: 12, color: G.textMuted, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>/ {session.name}</span>
               </div>
-              {isGuest && <span style={{ fontSize: 11, background: G.accentGlow, color: G.accent, padding: '2px 8px', borderRadius: 20, border: `1px solid ${G.accent}44` }}>Guest</span>}
+              {isGuest && <span style={{ fontSize: 11, background: G.accentGlow, color: G.accent, padding: '2px 8px', borderRadius: 20, border: `1px solid ${G.accent}44`, flexShrink: 0 }}>Guest</span>}
             </div>
             <button
               onClick={() => setSession(null)}
-              style={{ ...btnBase, padding: '6px 12px', background: 'none', color: G.textMuted, border: `1px solid ${G.border}`, fontSize: 12 }}
+              style={{ ...btnBase, padding: '6px 12px', background: 'none', color: G.textMuted, border: `1px solid ${G.border}`, fontSize: 12, flexShrink: 0 }}
             >
               ← Groups
             </button>
           </div>
 
-          {/* Row 2: session name on mobile, tabs */}
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: isMobile ? 'center' : 'flex-start', gap: 0, overflowX: 'auto', paddingBottom: 0 }}>
-            {isMobile && (
-              <span style={{ fontSize: 12, color: G.textMuted, paddingRight: 12, whiteSpace: 'nowrap' }}>/ {session.name}</span>
-            )}
+          {/* Tabs row — always all 4 visible, no scroll */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)' }}>
             {TABS.map(t => (
               <button key={t.id} onClick={() => setTab(t.id)} style={{
-                ...btnBase, padding: isMobile ? '8px 10px' : '10px 14px', background: 'none',
-                color: tab === t.id ? G.accent : G.textMuted, border: 'none',
+                ...btnBase,
+                padding: '10px 4px',
+                background: 'none',
+                color: tab === t.id ? G.accent : G.textMuted,
+                border: 'none',
                 borderBottom: tab === t.id ? `2px solid ${G.accent}` : '2px solid transparent',
-                borderRadius: 0, fontWeight: tab === t.id ? 700 : 400,
-                fontSize: isMobile ? 12 : 13, whiteSpace: 'nowrap',
+                borderRadius: 0,
+                fontWeight: tab === t.id ? 700 : 400,
+                fontSize: 13,
+                whiteSpace: 'nowrap',
+                textAlign: 'center',
               }}>
                 <span style={{ marginRight: 4 }}>{t.icon}</span>{t.label}
               </button>

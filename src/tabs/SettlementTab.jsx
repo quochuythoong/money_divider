@@ -264,7 +264,7 @@ export default function SettlementTab({ participants, bills }) {
 
                 return [
                   /* Col 1: Checkbox */
-                  <div key={`chk-${s.key}`} style={{ ...firstCellStyle, filter: 'none', opacity: 1 }}>
+                  <div key={`chk-${s.key}`} style={{ ...firstCellStyle, filter: 'none', opacity: 1, background: 'transparent' }}>
                     <input
                       type="checkbox"
                       checked={done}
