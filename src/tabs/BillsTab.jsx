@@ -125,88 +125,94 @@ export default function BillsTab({ sessionId, participants, bills, reload, loadi
 
   // ── Render ────────────────────────────────────────────────────────────────────
   return (
-    <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24, gap: 12, flexWrap: 'wrap' }}>
-        <div>
-          <h2 style={{ fontSize: 22, fontFamily: "'DM Serif Display', Georgia, serif", color: G.text, marginBottom: 4 }}>
-            Bills &amp; Expenses
-          </h2>
-          <p style={{ color: G.textMuted, fontSize: 13 }}>
-            {bills.length} {bills.length === 1 ? 'bill' : 'bills'}
-            {bills.length > 0 && <> · Total: <span style={{ color: G.accent, fontWeight: 600 }}>{fmtVND(total)}</span></>}
-          </p>
+    <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 120px)' }}>
+      
+      {/* Sticky header */}
+      <div style={{ flexShrink: 0, marginBottom: 16 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+          <div>
+            <h2 style={{ fontSize: 22, fontFamily: "'DM Serif Display', Georgia, serif", color: G.text, marginBottom: 4 }}>
+              Bills &amp; Expenses
+            </h2>
+            <p style={{ color: G.textMuted, fontSize: 13 }}>
+              {bills.length} {bills.length === 1 ? 'bill' : 'bills'}
+              {bills.length > 0 && <> · Total: <span style={{ color: G.accent, fontWeight: 600 }}>{fmtVND(total)}</span></>}
+            </p>
+          </div>
+          <button
+            onClick={openAdd}
+            disabled={participants.length === 0}
+            title={participants.length === 0 ? 'Add participants first' : ''}
+            style={{
+              ...btnBase, background: G.accent, color: '#000', fontWeight: 700,
+              boxShadow: `0 0 22px ${G.accentGlow}`,
+              opacity: participants.length === 0 ? 0.4 : 1,
+              cursor: participants.length === 0 ? 'not-allowed' : 'pointer',
+            }}
+          >
+            + Add Bill
+          </button>
         </div>
-        <button
-          onClick={openAdd}
-          disabled={participants.length === 0}
-          title={participants.length === 0 ? 'Add participants first' : ''}
-          style={{
-            ...btnBase,
-            background: G.accent, color: '#000', fontWeight: 700,
-            boxShadow: `0 0 22px ${G.accentGlow}`,
-            opacity: participants.length === 0 ? 0.4 : 1,
-            cursor:  participants.length === 0 ? 'not-allowed' : 'pointer',
-          }}
-        >
-          + Add Bill
-        </button>
       </div>
+      
+      {/* Scrollable content */}
+      <div style={{ flex: 1, overflowY: 'auto' }}>
+        {loading ? <Spinner /> : bills.length === 0 ? (
+          <Empty icon="🧾" text={participants.length === 0 ? 'Add participants first, then add bills.' : 'No bills yet. Add your first expense.'} />
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {bills.map(bill => {
+              const payer   = participants.find(p => p.id === bill.payer_id)
+              const parts   = participants.filter(p => bill.participants.some(bp => bp.participant_id === p.id))
+              const share   = +bill.amount / (parts.length || 1)
+              const catCol  = CAT_COLORS[bill.category] ?? G.textMuted
 
-      {loading ? <Spinner /> : bills.length === 0 ? (
-        <Empty icon="🧾" text={participants.length === 0 ? 'Add participants first, then add bills.' : 'No bills yet. Add your first expense.'} />
-      ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-          {bills.map(bill => {
-            const payer   = participants.find(p => p.id === bill.payer_id)
-            const parts   = participants.filter(p => bill.participants.some(bp => bp.participant_id === p.id))
-            const share   = +bill.amount / (parts.length || 1)
-            const catCol  = CAT_COLORS[bill.category] ?? G.textMuted
-
-            return (
-              <div
-                key={bill.id}
-                style={{ background: G.card, border: `1px solid ${G.border}`, borderRadius: 12, padding: '16px 20px', transition: 'border-color 0.15s' }}
-                onMouseEnter={e => e.currentTarget.style.borderColor = G.borderHi}
-                onMouseLeave={e => e.currentTarget.style.borderColor = G.border}
-              >
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12, flexWrap: 'wrap' }}>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 9, marginBottom: 7, flexWrap: 'wrap' }}>
-                      <span style={{ fontWeight: 700, fontSize: 15, color: G.text }}>{bill.title}</span>
-                      <Badge color={catCol}>{bill.category}</Badge>
+              return (
+                <div
+                  key={bill.id}
+                  style={{ background: G.card, border: `1px solid ${G.border}`, borderRadius: 12, padding: '16px 20px', transition: 'border-color 0.15s' }}
+                  onMouseEnter={e => e.currentTarget.style.borderColor = G.borderHi}
+                  onMouseLeave={e => e.currentTarget.style.borderColor = G.border}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12, flexWrap: 'wrap' }}>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 9, marginBottom: 7, flexWrap: 'wrap' }}>
+                        <span style={{ fontWeight: 700, fontSize: 15, color: G.text }}>{bill.title}</span>
+                        <Badge color={catCol}>{bill.category}</Badge>
+                      </div>
+                      <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', fontSize: 13, color: G.textMuted }}>
+                        <span>💳 <span style={{ color: G.text, fontWeight: 600 }}>{payer?.name ?? '?'}</span> paid</span>
+                        <span>👥 {parts.map(p => p.name).join(', ') || '—'}</span>
+                        {bill.notes && <span>📝 {bill.notes}</span>}
+                      </div>
+                      <div style={{ marginTop: 7, fontSize: 11, color: G.textDim }}>
+                        {fmtVND(share)} / person × {parts.length} {parts.length === 1 ? 'person' : 'people'}
+                      </div>
                     </div>
-                    <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', fontSize: 13, color: G.textMuted }}>
-                      <span>💳 <span style={{ color: G.text, fontWeight: 600 }}>{payer?.name ?? '?'}</span> paid</span>
-                      <span>👥 {parts.map(p => p.name).join(', ') || '—'}</span>
-                      {bill.notes && <span>📝 {bill.notes}</span>}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
+                      <span style={{ fontSize: 19, fontWeight: 700, color: G.accent, fontFamily: "'DM Serif Display', Georgia, serif" }}>
+                        {fmtVND(+bill.amount)}
+                      </span>
+                      <button
+                        onClick={() => openEdit(bill)}
+                        style={{ ...btnBase, padding: '5px 10px', fontSize: 11, background: G.surface, color: G.textMuted, border: `1px solid ${G.border}` }}
+                      >
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => setConfirmDel(bill)}
+                        style={{ ...btnBase, padding: '5px 10px', fontSize: 11, background: G.redBg, color: G.red, border: `1px solid ${G.red}33` }}
+                      >
+                        ×
+                      </button>
                     </div>
-                    <div style={{ marginTop: 7, fontSize: 11, color: G.textDim }}>
-                      {fmtVND(share)} / person × {parts.length} {parts.length === 1 ? 'person' : 'people'}
-                    </div>
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
-                    <span style={{ fontSize: 19, fontWeight: 700, color: G.accent, fontFamily: "'DM Serif Display', Georgia, serif" }}>
-                      {fmtVND(+bill.amount)}
-                    </span>
-                    <button
-                      onClick={() => openEdit(bill)}
-                      style={{ ...btnBase, padding: '5px 10px', fontSize: 11, background: G.surface, color: G.textMuted, border: `1px solid ${G.border}` }}
-                    >
-                      Edit
-                    </button>
-                    <button
-                      onClick={() => setConfirmDel(bill)}
-                      style={{ ...btnBase, padding: '5px 10px', fontSize: 11, background: G.redBg, color: G.red, border: `1px solid ${G.red}33` }}
-                    >
-                      ×
-                    </button>
                   </div>
                 </div>
-              </div>
-            )
-          })}
-        </div>
-      )}
+              )
+            })}
+          </div>
+        )}
+      </div>
 
       {/* Modal */}
       {showModal && (

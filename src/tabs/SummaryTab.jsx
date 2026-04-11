@@ -24,16 +24,20 @@ export default function SummaryTab({ participants, bills }) {
   }
 
   return (
-    <div>
-      <h2 style={{ fontSize: 22, fontFamily: "'DM Serif Display', Georgia, serif", color: G.text, marginBottom: 4 }}>
-        Summary
-      </h2>
-      <p style={{ color: G.textMuted, fontSize: 13, marginBottom: 28 }}>
-        Per-person breakdown across all {bills.length} {bills.length === 1 ? 'bill' : 'bills'} · Total: <span style={{ color: G.accent, fontWeight: 600 }}>{fmtVND(totalExpenses)}</span>
-      </p>
+    <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 120px)' }}>
+
+      {/* Sticky header */}
+      <div style={{ flexShrink: 0, marginBottom: 16 }}>
+        <h2 style={{ fontSize: 22, fontFamily: "'DM Serif Display', Georgia, serif", color: G.text, marginBottom: 4 }}>
+          Summary
+        </h2>
+        <p style={{ color: G.textMuted, fontSize: 13 }}>
+          Per-person breakdown across all {bills.length} {bills.length === 1 ? 'bill' : 'bills'} · Total: <span style={{ color: G.accent, fontWeight: 600 }}>{fmtVND(totalExpenses)}</span>
+        </p>
+      </div>
 
       {/* Per-person table */}
-      <div style={{ overflowX: 'auto', marginBottom: 40 }}>
+      <div style={{ flex: 1, overflowY: 'auto', paddingBottom: 20 }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14, minWidth: 540 }}>
           <thead>
             <tr style={{ borderBottom: `1px solid ${G.border}` }}>
@@ -87,7 +91,6 @@ export default function SummaryTab({ participants, bills }) {
             })}
           </tbody>
         </table>
-      </div>
 
       {/* Bill-by-bill breakdown */}
       {bills.length > 0 && (
@@ -135,6 +138,7 @@ export default function SummaryTab({ participants, bills }) {
           </div>
         </>
       )}
+      </div>{/* end scrollable content */}
     </div>
   )
 }

@@ -360,14 +360,14 @@ export default function App() {
             {TABS.map(t => (
               <button key={t.id} onClick={() => setTab(t.id)} style={{
                 ...btnBase,
-                padding: '10px 4px',
+                padding: '12px 4px',
                 background: 'none',
                 color: tab === t.id ? G.accent : G.textMuted,
                 border: 'none',
                 borderBottom: tab === t.id ? `2px solid ${G.accent}` : '2px solid transparent',
                 borderRadius: 0,
                 fontWeight: tab === t.id ? 700 : 400,
-                fontSize: 13,
+                fontSize: 15,
                 whiteSpace: 'nowrap',
                 textAlign: 'center',
               }}>
@@ -379,7 +379,7 @@ export default function App() {
         </div>
       </div>
 
-      <div style={{ maxWidth: 960, margin: '0 auto', padding: '32px 20px', paddingBottom: 'max(32px, env(safe-area-inset-bottom))' }}>
+      <div style={{ maxWidth: 960, margin: '0 auto', padding: '16px 20px', paddingBottom: 'max(32px, env(safe-area-inset-bottom))' }}>
         {tab === 'participants' && <ParticipantsTab sessionId={session.id} participants={participants} reload={reload} loading={loading} isGuest={isGuest} guestApi={guestApi} />}
         {tab === 'bills'        && <BillsTab        sessionId={session.id} participants={participants} bills={bills} reload={reload} loading={loading} isGuest={isGuest} guestApi={guestApi} />}
         {tab === 'summary'     && <SummaryTab      participants={participants} bills={bills} />}

@@ -70,71 +70,76 @@ export default function ParticipantsTab({ sessionId, participants, reload, loadi
 
   // ── Render ────────────────────────────────────────────────────────────────────
   return (
-    <div>
-      {/* Header row */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24, gap: 12, flexWrap: 'wrap' }}>
-        <div>
-          <h2 style={{ fontSize: 22, fontFamily: "'DM Serif Display', Georgia, serif", color: G.text, marginBottom: 4 }}>
-            Participants
-          </h2>
-          <p style={{ color: G.textMuted, fontSize: 13 }}>
-            {participants.length} {participants.length === 1 ? 'person' : 'people'} in this group
-          </p>
+    <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 120px)' }}>
+      
+      {/* Sticky header */}
+      <div style={{ flexShrink: 0, marginBottom: 16 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+          <div>
+            <h2 style={{ fontSize: 22, fontFamily: "'DM Serif Display', Georgia, serif", color: G.text, marginBottom: 4 }}>
+              Participants
+            </h2>
+            <p style={{ color: G.textMuted, fontSize: 13 }}>
+              {participants.length} {participants.length === 1 ? 'person' : 'people'} in this group
+            </p>
+          </div>
+          <button
+            onClick={openAdd}
+            style={{ ...btnBase, background: G.accent, color: '#000', fontWeight: 700, boxShadow: `0 0 22px ${G.accentGlow}` }}
+          >
+            + Add Person
+          </button>
         </div>
-        <button
-          onClick={openAdd}
-          style={{ ...btnBase, background: G.accent, color: '#000', fontWeight: 700, boxShadow: `0 0 22px ${G.accentGlow}` }}
-        >
-          + Add Person
-        </button>
       </div>
 
       {/* Content */}
-      {loading ? <Spinner /> : participants.length === 0 ? (
-        <Empty icon="👥" text="No participants yet. Add people to get started." />
-      ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 10 }}>
-          {participants.map((p, i) => {
-            const color = AVATAR_COLORS[i % AVATAR_COLORS.length]
-            return (
-              <div
-                key={p.id}
-                style={{
-                  background:   G.card,
-                  border:       `1px solid ${G.border}`,
-                  borderRadius: 12,
-                  padding:      '14px 16px',
-                  display:      'flex',
-                  alignItems:   'center',
-                  gap:          12,
-                  transition:   'border-color 0.15s',
-                }}
-                onMouseEnter={e => e.currentTarget.style.borderColor = G.borderHi}
-                onMouseLeave={e => e.currentTarget.style.borderColor = G.border}
-              >
-                <Avatar name={p.name} color={color} />
-                <span style={{ flex: 1, fontWeight: 600, color: G.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {p.name}
-                </span>
-                <div style={{ display: 'flex', gap: 5, flexShrink: 0 }}>
-                  <button
-                    onClick={() => openEdit(p)}
-                    style={{ ...btnBase, padding: '4px 9px', fontSize: 11, background: G.surface, color: G.textMuted, border: `1px solid ${G.border}` }}
-                  >
-                    Edit
-                  </button>
-                  <button
-                    onClick={() => setConfirmDel(p)}
-                    style={{ ...btnBase, padding: '4px 9px', fontSize: 11, background: G.redBg, color: G.red, border: `1px solid ${G.red}33` }}
-                  >
-                    ×
-                  </button>
+      <div style={{ flex: 1, overflowY: 'auto' }}>
+        {loading ? <Spinner /> : participants.length === 0 ? (
+          <Empty icon="👥" text="No participants yet. Add people to get started." />
+        ) : (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 10 }}>
+            {participants.map((p, i) => {
+              const color = AVATAR_COLORS[i % AVATAR_COLORS.length]
+              return (
+                <div
+                  key={p.id}
+                  style={{
+                    background:   G.card,
+                    border:       `1px solid ${G.border}`,
+                    borderRadius: 12,
+                    padding:      '14px 16px',
+                    display:      'flex',
+                    alignItems:   'center',
+                    gap:          12,
+                    transition:   'border-color 0.15s',
+                  }}
+                  onMouseEnter={e => e.currentTarget.style.borderColor = G.borderHi}
+                  onMouseLeave={e => e.currentTarget.style.borderColor = G.border}
+                >
+                  <Avatar name={p.name} color={color} />
+                  <span style={{ flex: 1, fontWeight: 600, color: G.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {p.name}
+                  </span>
+                  <div style={{ display: 'flex', gap: 5, flexShrink: 0 }}>
+                    <button
+                      onClick={() => openEdit(p)}
+                      style={{ ...btnBase, padding: '4px 9px', fontSize: 11, background: G.surface, color: G.textMuted, border: `1px solid ${G.border}` }}
+                    >
+                      Edit
+                    </button>
+                    <button
+                      onClick={() => setConfirmDel(p)}
+                      style={{ ...btnBase, padding: '4px 9px', fontSize: 11, background: G.redBg, color: G.red, border: `1px solid ${G.red}33` }}
+                    >
+                      ×
+                    </button>
+                  </div>
                 </div>
-              </div>
-            )
-          })}
-        </div>
-      )}
+              )
+            })}
+          </div>
+        )}
+      </div>
 
       {/* Add / Edit modal */}
       {showModal && (
