@@ -59,21 +59,27 @@ export default function AuthScreen({ onGuest }) {
             ))}
           </div>
 
-          <Input
-            label="Username"
-            value={username}
-            onChange={e => { setUsername(e.target.value); setError('') }}
-            placeholder="your username"
-            autoFocus
-          />
-          <Input
-            label="Password"
-            type="password"
-            value={password}
-            onChange={e => { setPassword(e.target.value); setError('') }}
-            onKeyDown={e => e.key === 'Enter' && submit()}
-            placeholder="••••••••"
-          />
+          <form autoComplete="off" onSubmit={e => e.preventDefault()}>
+            <Input
+              label="Username"
+              value={username}
+              onChange={e => { setUsername(e.target.value); setError('') }}
+              placeholder="your username"
+              autoFocus
+              autoComplete="off"
+              name="md-username"
+            />
+            <Input
+              label="Password"
+              type="password"
+              value={password}
+              onChange={e => { setPassword(e.target.value); setError('') }}
+              onKeyDown={e => e.key === 'Enter' && submit()}
+              placeholder="••••••••"
+              autoComplete="new-password"
+              name="md-password"
+            />
+          </form>
 
           {error && <p style={{ color: G.red, fontSize: 12, marginBottom: 14, marginTop: -6 }}>{error}</p>}
 
