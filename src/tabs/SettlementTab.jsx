@@ -110,16 +110,35 @@ export default function SettlementTab({ participants, bills }) {
     try {
       const canvas = await html2canvas(captureRef.current, {
         backgroundColor: G.bg,
-        scale: 2, // retina quality
+        scale: 2,
         useCORS: true,
         logging: false,
       })
+
+      // Convert to blob
+      const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'))
+      const file = new File([blob], 'settlements.png', { type: 'image/png' })
+
+      // iPhone Safari: use Web Share API → native "Save Image" appears
+      if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({
+          files: [file],
+          title: 'MoneyDivider Settlements',
+        })
+        return
+      }
+
+      // Desktop fallback: trigger download
+      const url  = URL.createObjectURL(blob)
       const link = document.createElement('a')
       link.download = 'settlements.png'
-      link.href = canvas.toDataURL('image/png')
+      link.href = url
       link.click()
+      URL.revokeObjectURL(url)
     } catch (e) {
-      alert('Could not save image: ' + e.message)
+      if (e.name !== 'AbortError') {
+        alert('Could not save image: ' + e.message)
+      }
     }
   }
 
@@ -221,53 +240,111 @@ export default function SettlementTab({ participants, bills }) {
             </div>
           )}
           {settlements.length > 0 && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              {settlements.map(s => {
+            <div style={{
+              display:               'grid',
+              gridTemplateColumns:   isMobile ? '20px 1fr 50px 1fr' : '20px 1fr 50px 1fr auto',
+              alignItems:            'center',
+              gap:                   '0 12px',
+              background:            G.card,
+              border:                `1px solid ${G.border}`,
+              borderRadius:          12,
+              overflow:              'hidden',
+            }}>
+              {settlements.map((s, rowIndex) => {
                 const done = checkedKeys.has(s.key)
-                return (
-                  <div key={s.key} style={{
-                    background: G.card, border: `1px solid ${G.border}`,
-                    borderRadius: 12, padding: '16px 22px',
-                    display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap',
-                    transition: 'border-color 0.15s, opacity 0.2s',
-                    opacity: done ? 0.35 : 1,
-                    filter: done ? 'blur(2px)' : 'none',
-                    userSelect: done ? 'none' : 'auto',
-                  }}
-                    onMouseEnter={e => { if (!done) e.currentTarget.style.borderColor = G.borderHi }}
-                    onMouseLeave={e => { e.currentTarget.style.borderColor = G.border }}
-                  >
+                const rowBg = done ? 'rgba(0,0,0,0.3)' : 'transparent'
+                const cellStyle = {
+                  padding:    '14px 0',
+                  opacity:    done ? 0.35 : 1,
+                  filter:     done ? 'blur(2px)' : 'none',
+                  background: rowBg,
+                }
+                const firstCellStyle = { ...cellStyle, paddingLeft: 14 }
+                const lastCellStyle  = { ...cellStyle, paddingRight: 14 }
+
+                return [
+                  /* Col 1: Checkbox */
+                  <div key={`chk-${s.key}`} style={{ ...firstCellStyle, filter: 'none', opacity: 1 }}>
                     <input
-                      type="checkbox" checked={done}
+                      type="checkbox"
+                      checked={done}
                       onChange={() => toggleCheck(s.key)}
                       onClick={e => e.stopPropagation()}
-                      style={{ width: 17, height: 17, accentColor: G.green, cursor: 'pointer', flexShrink: 0, filter: 'none', opacity: 1 }}
+                      style={{ width: 17, height: 17, accentColor: G.green, cursor: 'pointer', display: 'block' }}
                     />
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                      <Avatar name={s.from} color={colorOf(s.fromId)} size={32} />
-                      <div>
-                        <div style={{ fontWeight: 700, color: G.text, fontSize: 14 }}>{s.from}</div>
-                        <div style={{ fontSize: 11, color: G.red }}>owes</div>
+                  </div>,
+
+                  /* Col 2: From */
+                  <div key={`from-${s.key}`} style={{ ...cellStyle, display: 'flex', alignItems: 'center', gap: 8, paddingLeft: 8 }}>
+                    <Avatar name={s.from} color={colorOf(s.fromId)} size={32} />
+                    <div>
+                      <div style={{ fontWeight: 700, color: G.text, fontSize: 14, whiteSpace: 'nowrap' }}>{s.from}</div>
+                      <div style={{ fontSize: 11, color: G.red }}>owes</div>
+                    </div>
+                  </div>,
+
+                  /* Col 3: Arrow */
+                  <div key={`arr-${s.key}`} style={{ ...cellStyle, color: G.textDim, fontSize: 18, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                    →
+                  </div>,
+
+                  /* Col 4: To */
+                  <div key={`to-${s.key}`} style={{ ...cellStyle, display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <Avatar name={s.to} color={colorOf(s.toId)} size={32} />
+                    <div>
+                      <div style={{ fontWeight: 700, color: G.text, fontSize: 14, whiteSpace: 'nowrap' }}>{s.to}</div>
+                      <div style={{ fontSize: 11, color: G.green }}>receives</div>
+                    </div>
+                  </div>,
+
+                  /* Col 5: Amount (desktop only — hidden col on mobile, shown below via row trick) */
+                  !isMobile && (
+                    <div key={`amt-${s.key}`} style={{ ...lastCellStyle }}>
+                      <div style={{
+                        padding:      '7px 18px',
+                        background:   G.accentGlow,
+                        border:       `1px solid ${G.accent}33`,
+                        borderRadius: 8,
+                        fontSize:     17,
+                        fontWeight:   700,
+                        color:        G.accent,
+                        fontFamily:   "'DM Serif Display', Georgia, serif",
+                        textAlign:    'center',
+                        whiteSpace:   'nowrap',
+                      }}>
+                        {fmtVND(s.amount)}
                       </div>
                     </div>
-                    <div style={{ color: G.textDim, fontSize: 20, flexShrink: 0, margin: '0 4px' }}>→</div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, flex: 1 }}>
-                      <Avatar name={s.to} color={colorOf(s.toId)} size={32} />
-                      <div>
-                        <div style={{ fontWeight: 700, color: G.text, fontSize: 14 }}>{s.to}</div>
-                        <div style={{ fontSize: 11, color: G.green }}>receives</div>
-                      </div>
-                    </div>
-                    <div style={{
-                      fontSize: 20, fontWeight: 700, color: G.accent,
-                      fontFamily: "'DM Serif Display', Georgia, serif",
-                      flexShrink: 0, background: G.accentGlow,
-                      padding: '6px 16px', borderRadius: 8,
+                  ),
+
+                  /* Mobile amount: spans full width on its own sub-row */
+                  isMobile && (
+                    <div key={`amt-${s.key}`} style={{
+                      gridColumn:   '1 / -1',
+                      background:   rowBg,
+                      paddingLeft:  52,
+                      paddingBottom: 14,
+                      opacity:      done ? 0.35 : 1,
+                      filter:       done ? 'blur(2px)' : 'none',
                     }}>
-                      {fmtVND(s.amount)}
+                      <div style={{
+                        display:      'inline-block',
+                        minWidth:     140,
+                        padding:      '7px 18px',
+                        background:   G.accentGlow,
+                        border:       `1px solid ${G.accent}33`,
+                        borderRadius: 8,
+                        fontSize:     17,
+                        fontWeight:   700,
+                        color:        G.accent,
+                        fontFamily:   "'DM Serif Display', Georgia, serif",
+                        textAlign:    'center',
+                      }}>
+                        {fmtVND(s.amount)}
+                      </div>
                     </div>
-                  </div>
-                )
+                  ),
+                ]
               })}
             </div>
           )}
@@ -283,7 +360,8 @@ export default function SettlementTab({ participants, bills }) {
             onClick={() => fileInputRef.current.click()}
             style={{
               width: isMobile ? '100%' : 260,
-              height: isMobile ? 220 : 260,
+              minHeight: 120,
+              height: 'auto',
               boxSizing: 'border-box',
               border: `2px dashed ${qrImage ? G.accent + '88' : G.border}`,
               borderRadius: 16, display: 'flex', flexDirection: 'column',
@@ -296,7 +374,11 @@ export default function SettlementTab({ participants, bills }) {
           >
             {qrImage ? (
               <>
-                <img src={qrImage} alt="Bank QR" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                <img
+                  src={qrImage}
+                  alt="Bank QR"
+                  style={{ width: '100%', height: 'auto', display: 'block', objectFit: 'contain' }}
+                />
                 <div style={{
                   position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.55)',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',

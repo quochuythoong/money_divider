@@ -4,6 +4,7 @@ import { onAuthChange, signOut } from './lib/auth.js'
 import { G, btnBase } from './styles/theme.js'
 import { Modal, Input, Spinner } from './components/index.jsx'
 import { isConfigured } from './lib/supabase.js'
+import { useIsMobile } from './lib/useIsMobile.js'
 import AuthScreen      from './tabs/AuthScreen.jsx'
 import ParticipantsTab from './tabs/ParticipantsTab.jsx'
 import BillsTab        from './tabs/BillsTab.jsx'
@@ -72,6 +73,7 @@ function clearGuest() {
 
 // clear guest data on tab/window close
 window.addEventListener('beforeunload', clearGuest)
+clearGuest()
 
 // ─── Tiny uid for guest mode ──────────────────────────────────────────────────
 const uid = () => Math.random().toString(36).slice(2, 9)
@@ -227,6 +229,8 @@ export default function App() {
   const [bills,        setBills]        = useState([])
   const [loading,      setLoading]      = useState(false)
 
+  const isMobile = useIsMobile()
+
   // Listen for Supabase auth changes
   useEffect(() => {
     const { data: { subscription } } = onAuthChange(u => setUser(u))
@@ -322,41 +326,58 @@ export default function App() {
   return (
     <div style={{ minHeight: '100vh', background: G.bg }}>
       <div style={{
-        background: G.surface, borderBottom: `1px solid ${G.border}`,
-        position: 'sticky', top: 0, zIndex: 50, padding: '0 20px',
+        background:    G.surface,
+        borderBottom:  `1px solid ${G.border}`,
+        position:      'sticky',
+        top:            0,
+        zIndex:         50,
+        padding:        '0 20px',
+        paddingTop:     'env(safe-area-inset-top)',
       }}>
-        <div style={{ maxWidth: 960, margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 0' }}>
-            <div style={{ width: 30, height: 30, borderRadius: 7, background: G.accent, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15, fontWeight: 900, color: '#000' }}>÷</div>
-            <div>
-              <span style={{ fontFamily: "'DM Serif Display', Georgia, serif", fontWeight: 700, fontSize: 17, color: G.text }}>
-                Money<span style={{ color: G.accent }}>Divider</span>
-              </span>
-              <span style={{ marginLeft: 10, fontSize: 12, color: G.textMuted }}>/ {session.name}</span>
+        <div style={{ maxWidth: 960, margin: '0 auto' }}>
+
+          {/* Row 1: Logo + Groups button always top right */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 0 0' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <div style={{ width: 30, height: 30, borderRadius: 7, background: G.accent, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15, fontWeight: 900, color: '#000' }}>÷</div>
+              <div>
+                <span style={{ fontFamily: "'DM Serif Display', Georgia, serif", fontWeight: 700, fontSize: 17, color: G.text }}>
+                  Money<span style={{ color: G.accent }}>Divider</span>
+                </span>
+                {!isMobile && <span style={{ marginLeft: 10, fontSize: 12, color: G.textMuted }}>/ {session.name}</span>}
+              </div>
+              {isGuest && <span style={{ fontSize: 11, background: G.accentGlow, color: G.accent, padding: '2px 8px', borderRadius: 20, border: `1px solid ${G.accent}44` }}>Guest</span>}
             </div>
-            {isGuest && <span style={{ fontSize: 11, background: G.accentGlow, color: G.accent, padding: '2px 8px', borderRadius: 20, border: `1px solid ${G.accent}44` }}>Guest</span>}
+            <button
+              onClick={() => setSession(null)}
+              style={{ ...btnBase, padding: '6px 12px', background: 'none', color: G.textMuted, border: `1px solid ${G.border}`, fontSize: 12 }}
+            >
+              ← Groups
+            </button>
           </div>
 
-          <div style={{ display: 'flex', gap: 0 }}>
+          {/* Row 2: session name on mobile, tabs */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: isMobile ? 'center' : 'flex-start', gap: 0, overflowX: 'auto', paddingBottom: 0 }}>
+            {isMobile && (
+              <span style={{ fontSize: 12, color: G.textMuted, paddingRight: 12, whiteSpace: 'nowrap' }}>/ {session.name}</span>
+            )}
             {TABS.map(t => (
               <button key={t.id} onClick={() => setTab(t.id)} style={{
-                ...btnBase, padding: '10px 14px', background: 'none',
+                ...btnBase, padding: isMobile ? '8px 10px' : '10px 14px', background: 'none',
                 color: tab === t.id ? G.accent : G.textMuted, border: 'none',
                 borderBottom: tab === t.id ? `2px solid ${G.accent}` : '2px solid transparent',
-                borderRadius: 0, fontWeight: tab === t.id ? 700 : 400, fontSize: 13,
+                borderRadius: 0, fontWeight: tab === t.id ? 700 : 400,
+                fontSize: isMobile ? 12 : 13, whiteSpace: 'nowrap',
               }}>
-                <span style={{ marginRight: 5 }}>{t.icon}</span>{t.label}
+                <span style={{ marginRight: 4 }}>{t.icon}</span>{t.label}
               </button>
             ))}
           </div>
 
-          <button onClick={() => setSession(null)} style={{ ...btnBase, padding: '6px 12px', background: 'none', color: G.textMuted, border: `1px solid ${G.border}`, fontSize: 12 }}>
-            ← Groups
-          </button>
         </div>
       </div>
 
-      <div style={{ maxWidth: 960, margin: '0 auto', padding: '32px 20px' }}>
+      <div style={{ maxWidth: 960, margin: '0 auto', padding: '32px 20px', paddingBottom: 'max(32px, env(safe-area-inset-bottom))' }}>
         {tab === 'participants' && <ParticipantsTab sessionId={session.id} participants={participants} reload={reload} loading={loading} isGuest={isGuest} guestApi={guestApi} />}
         {tab === 'bills'        && <BillsTab        sessionId={session.id} participants={participants} bills={bills} reload={reload} loading={loading} isGuest={isGuest} guestApi={guestApi} />}
         {tab === 'summary'     && <SummaryTab      participants={participants} bills={bills} />}
