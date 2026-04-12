@@ -34,7 +34,7 @@ export function Spinner() {
 }
 
 // ─── Modal ────────────────────────────────────────────────────────────────────
-export function Modal({ title, onClose, children, width = 480 }) {
+export function Modal({ title, onClose, children, width = 480, centered = false }) {
   return (
     <div
       style={{
@@ -44,8 +44,8 @@ export function Modal({ title, onClose, children, width = 480 }) {
         display:        'flex',
         flexDirection:  'column',
         alignItems:     'center',
-        justifyContent: window.innerWidth < 768 ? 'flex-end' : 'center',
-        padding:        window.innerWidth < 768 ? 0 : 16,
+        justifyContent: (!centered && window.innerWidth < 768) ? 'flex-end' : 'center',
+        padding:        (!centered && window.innerWidth < 768) ? 0 : 16,
         backdropFilter: 'blur(5px)',
       }}
       onClick={onClose}
@@ -61,10 +61,9 @@ export function Modal({ title, onClose, children, width = 480 }) {
           maxHeight:     '85dvh',
           overflowY:     'auto',
           boxShadow:     '0 32px 80px rgba(0,0,0,0.7)',
-          // Mobile: stick to bottom like a sheet
-          alignSelf:     window.innerWidth < 768 ? 'flex-end' : 'center',
-          borderBottomLeftRadius:  window.innerWidth < 768 ? 0 : 16,
-          borderBottomRightRadius: window.innerWidth < 768 ? 0 : 16,
+          alignSelf:     (!centered && window.innerWidth < 768) ? 'flex-end' : 'center',
+          borderBottomLeftRadius:  (!centered && window.innerWidth < 768) ? 0 : 16,
+          borderBottomRightRadius: (!centered && window.innerWidth < 768) ? 0 : 16,
           marginBottom:  0,
         }}
         onClick={e => e.stopPropagation()}
@@ -239,7 +238,7 @@ export function Empty({ icon, text }) {
 // ─── Confirm dialog ───────────────────────────────────────────────────────────
 export function Confirm({ message, onConfirm, onCancel }) {
   return (
-    <Modal title="Confirm" onClose={onCancel} width={360}>
+    <Modal title="Confirm" onClose={onCancel} width={360} centered>
       <p style={{ color: G.textMuted, fontSize: 14, marginBottom: 24 }}>{message}</p>
       <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
         <button onClick={onCancel}  style={{ ...btnBase, background: G.surface, color: G.textMuted, border: `1px solid ${G.border}` }}>Cancel</button>

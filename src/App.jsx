@@ -230,6 +230,8 @@ export default function App() {
   const [loading,      setLoading]      = useState(false)
 
   const isMobile = useIsMobile()
+  const [checkedKeys,  setCheckedKeys]  = useState(new Set())
+  const [collectorId,  setCollectorId]  = useState(null)
 
   // Listen for Supabase auth changes
   useEffect(() => {
@@ -383,7 +385,16 @@ export default function App() {
           {tab === 'participants' && <ParticipantsTab sessionId={session.id} participants={participants} reload={reload} loading={loading} isGuest={isGuest} guestApi={guestApi} />}
           {tab === 'bills'        && <BillsTab        sessionId={session.id} participants={participants} bills={bills} reload={reload} loading={loading} isGuest={isGuest} guestApi={guestApi} />}
           {tab === 'summary'     && <SummaryTab      participants={participants} bills={bills} />}
-          {tab === 'settlement'  && <SettlementTab   participants={participants} bills={bills} />}
+          {tab === 'settlement'  && (
+            <SettlementTab
+              participants={participants}
+              bills={bills}
+              checkedKeys={checkedKeys}
+              setCheckedKeys={setCheckedKeys}
+              collectorId={collectorId}
+              setCollectorId={setCollectorId}
+            />
+          )}
         </div>
       </div>
     </div>

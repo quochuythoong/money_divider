@@ -98,7 +98,7 @@ export default function ParticipantsTab({ sessionId, participants, reload, loadi
           <Empty icon="👥" text="No participants yet. Add people to get started." />
         ) : (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 10 }}>
-            {participants.map((p, i) => {
+            {[...participants].sort((a, b) => a.name.localeCompare(b.name)).map((p, i) => {
               const color = AVATAR_COLORS[i % AVATAR_COLORS.length]
               return (
                 <div

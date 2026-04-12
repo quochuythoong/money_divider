@@ -53,7 +53,7 @@ export default function SummaryTab({ participants, bills }) {
             </tr>
           </thead>
           <tbody>
-            {participants.map((p, i) => {
+            {[...participants].sort((a, b) => a.name.localeCompare(b.name)).map((p, i) => {
               const color = AVATAR_COLORS[i % AVATAR_COLORS.length]
               const n     = net[p.id]  ?? 0
               const pos   = n >  0.5

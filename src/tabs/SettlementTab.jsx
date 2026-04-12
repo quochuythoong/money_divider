@@ -5,15 +5,11 @@ import { calculateBalances, calculateSettlements, fmtVND } from '../engine/calcu
 import { useIsMobile } from '../lib/useIsMobile.js'
 import html2canvas from 'html2canvas'
 
-export default function SettlementTab({ participants, bills }) {
-  // ── NEW: checkbox state (set of settlement keys that are "done") ──────────
-  const [checkedKeys, setCheckedKeys] = useState(new Set())
-
-  // ── NEW: collector mode ───────────────────────────────────────────────────
-  const [collectorId, setCollectorId] = useState(null)   // null = off
+export default function SettlementTab({ participants, bills, checkedKeys, setCheckedKeys, collectorId, setCollectorId }) {
 
   // ── NEW: QR image ─────────────────────────────────────────────────────────
   const [qrImage, setQrImage] = useState(null)
+  const [capturing, setCapturing] = useState(false)
   const fileInputRef = useRef()
 
   // ── const ref ─────────────────────────────────────────────────────────────
@@ -77,7 +73,16 @@ export default function SettlementTab({ participants, bills }) {
   )
 
   // Active list depends on mode
-  const settlements = collectorId ? collectorSettlements : normalSettlements
+  const rawSettlements = (collectorId ? collectorSettlements : normalSettlements) ?? []
+
+  const paybackRows = collectorId
+    ? rawSettlements.filter(s => s.fromId === collectorId).sort((a, b) => a.to.localeCompare(b.to))
+    : []
+  const payerRows = rawSettlements
+    .filter(s => !collectorId || s.fromId !== collectorId)
+    .sort((a, b) => a.from.localeCompare(b.from))
+
+  const settlements = [...paybackRows, ...payerRows]
 
   const total = bills.reduce((s, b) => s + +b.amount, 0)
 
@@ -107,6 +112,9 @@ export default function SettlementTab({ participants, bills }) {
   // ── NEW: save settlements as image ───────────────────────────────────────
   const saveImage = async () => {
     if (!captureRef.current) return
+    setCapturing(true)
+    // Let React re-render with button hidden before capturing
+    await new Promise(r => setTimeout(r, 50))
     try {
       const canvas = await html2canvas(captureRef.current, {
         backgroundColor: G.bg,
@@ -114,31 +122,22 @@ export default function SettlementTab({ participants, bills }) {
         useCORS: true,
         logging: false,
       })
-
-      // Convert to blob
       const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'))
       const file = new File([blob], 'settlements.png', { type: 'image/png' })
-
-      // iPhone Safari: use Web Share API → native "Save Image" appears
       if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
-        await navigator.share({
-          files: [file],
-          title: 'MoneyDivider Settlements',
-        })
-        return
+        await navigator.share({ files: [file], title: 'MoneyDivider Settlements' })
+      } else {
+        const url  = URL.createObjectURL(blob)
+        const link = document.createElement('a')
+        link.download = 'settlements.png'
+        link.href = url
+        link.click()
+        URL.revokeObjectURL(url)
       }
-
-      // Desktop fallback: trigger download
-      const url  = URL.createObjectURL(blob)
-      const link = document.createElement('a')
-      link.download = 'settlements.png'
-      link.href = url
-      link.click()
-      URL.revokeObjectURL(url)
     } catch (e) {
-      if (e.name !== 'AbortError') {
-        alert('Could not save image: ' + e.message)
-      }
+      if (e.name !== 'AbortError') alert('Could not save image: ' + e.message)
+    } finally {
+      setCapturing(false)
     }
   }
 
@@ -245,115 +244,145 @@ export default function SettlementTab({ participants, bills }) {
                 <div style={{ fontSize: 13, marginTop: 4, opacity: 0.7 }}>No payments required.</div>
               </div>
             )}
-            {settlements.length > 0 && (
-              <div style={{
-                display:               'grid',
-                gridTemplateColumns:   isMobile ? '20px 1fr 50px 1fr' : '20px 1fr 50px 1fr auto',
-                alignItems:            'center',
-                gap:                   '0 12px',
-                background:            G.card,
-                border:                `1px solid ${G.border}`,
-                borderRadius:          12,
-                overflow:              'hidden',
-              }}>
-                {settlements.map((s, rowIndex) => {
-                  const done = checkedKeys.has(s.key)
-                  const rowBg = done ? 'rgba(0,0,0,0.3)' : 'transparent'
-                  const cellStyle = {
-                    padding:    '14px 0',
-                    opacity:    done ? 0.35 : 1,
-                    filter:     done ? 'blur(2px)' : 'none',
-                    background: rowBg,
-                  }
-                  const firstCellStyle = { ...cellStyle, paddingLeft: 14 }
-                  const lastCellStyle  = { ...cellStyle, paddingRight: 14 }
+            {settlements.length > 0 && (() => {
+              const cols = isMobile ? '20px 1fr 60px 1fr' : '20px 1fr 60px 1fr auto'
 
-                  return [
-                    /* Col 1: Checkbox */
-                    <div key={`chk-${s.key}`} style={{ ...firstCellStyle, filter: 'none', opacity: 1, background: 'transparent' }}>
-                      <input
-                        type="checkbox"
-                        checked={done}
-                        onChange={() => toggleCheck(s.key)}
-                        onClick={e => e.stopPropagation()}
-                        style={{ width: 17, height: 17, accentColor: G.green, cursor: 'pointer', display: 'block' }}
-                      />
-                    </div>,
+              const renderRow = (s) => {
+                const done = checkedKeys.has(s.key)
+                const isPayback = collectorId && s.fromId === collectorId
+                const rowBg = done ? 'rgba(0,0,0,0.3)' : 'transparent'
+                const cellStyle = {
+                  padding:    '14px 0',
+                  opacity:    done ? 0.35 : 1,
+                  filter:     done ? 'blur(2px)' : 'none',
+                  background: rowBg,
+                }
+                const firstCellStyle = { ...cellStyle, paddingLeft: 14 }
+                const lastCellStyle  = { ...cellStyle, paddingRight: 14 }
 
-                    /* Col 2: From */
-                    <div key={`from-${s.key}`} style={{ ...cellStyle, display: 'flex', alignItems: 'center', gap: 8, paddingLeft: 8 }}>
-                      <Avatar name={s.from} color={colorOf(s.fromId)} size={32} />
-                      <div>
-                        <div style={{ fontWeight: 700, color: G.text, fontSize: 14, whiteSpace: 'nowrap' }}>{s.from}</div>
-                        <div style={{ fontSize: 11, color: G.red }}>owes</div>
-                      </div>
-                    </div>,
+                return [
+                  <div key={`chk-${s.key}`} style={{ ...firstCellStyle, filter: 'none', opacity: 1, background: 'transparent' }}>
+                    <input
+                      type="checkbox"
+                      checked={done}
+                      onChange={() => toggleCheck(s.key)}
+                      onClick={e => e.stopPropagation()}
+                      style={{ width: 17, height: 17, accentColor: G.green, cursor: 'pointer', display: 'block' }}
+                    />
+                  </div>,
 
-                    /* Col 3: Arrow */
-                    <div key={`arr-${s.key}`} style={{ ...cellStyle, color: G.textDim, fontSize: 18, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-                      →
-                    </div>,
+                  <div key={`from-${s.key}`} style={{ ...cellStyle, display: 'flex', alignItems: 'center', gap: 8, paddingLeft: 8 }}>
+                    <Avatar name={s.from} color={colorOf(s.fromId)} size={32} />
+                    <div>
+                      <div style={{ fontWeight: 700, color: G.text, fontSize: 14, whiteSpace: 'nowrap' }}>{s.from}</div>
+                      <div style={{ fontSize: 11, color: G.red }}>owes</div>
+                    </div>
+                  </div>,
 
-                    /* Col 4: To */
-                    <div key={`to-${s.key}`} style={{ ...cellStyle, display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <Avatar name={s.to} color={colorOf(s.toId)} size={32} />
-                      <div>
-                        <div style={{ fontWeight: 700, color: G.text, fontSize: 14, whiteSpace: 'nowrap' }}>{s.to}</div>
-                        <div style={{ fontSize: 11, color: G.green }}>receives</div>
-                      </div>
-                    </div>,
+                  <div key={`arr-${s.key}`} style={{ ...cellStyle, color: G.textDim, fontSize: 18, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                    →
+                  </div>,
 
-                    /* Col 5: Amount (desktop only — hidden col on mobile, shown below via row trick) */
-                    !isMobile && (
-                      <div key={`amt-${s.key}`} style={{ ...lastCellStyle }}>
-                        <div style={{
-                          padding:      '7px 18px',
-                          background:   G.accentGlow,
-                          border:       `1px solid ${G.accent}33`,
-                          borderRadius: 8,
-                          fontSize:     17,
-                          fontWeight:   700,
-                          color:        G.accent,
-                          fontFamily:   "'DM Serif Display', Georgia, serif",
-                          textAlign:    'center',
-                          whiteSpace:   'nowrap',
-                        }}>
-                          {fmtVND(s.amount)}
-                        </div>
-                      </div>
-                    ),
+                  <div key={`to-${s.key}`} style={{ ...cellStyle, display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <Avatar name={s.to} color={colorOf(s.toId)} size={32} />
+                    <div>
+                      <div style={{ fontWeight: 700, color: G.text, fontSize: 14, whiteSpace: 'nowrap' }}>{s.to}</div>
+                      <div style={{ fontSize: 11, color: G.green }}>receives</div>
+                    </div>
+                  </div>,
 
-                    /* Mobile amount: spans full width on its own sub-row */
-                    isMobile && (
-                      <div key={`amt-${s.key}`} style={{
-                        gridColumn:   '1 / -1',
-                        background:   rowBg,
-                        paddingLeft:  52,
-                        paddingBottom: 14,
-                        opacity:      done ? 0.35 : 1,
-                        filter:       done ? 'blur(2px)' : 'none',
+                  !isMobile && (
+                    <div key={`amt-${s.key}`} style={{ ...lastCellStyle }}>
+                      <div style={{
+                        padding:      '7px 18px',
+                        background:   isPayback ? 'rgba(96,165,250,0.15)' : G.accentGlow,
+                        border:       `1px solid ${isPayback ? G.blue + '44' : G.accent + '33'}`,
+                        borderRadius: 8,
+                        fontSize:     17,
+                        fontWeight:   700,
+                        color:        isPayback ? G.blue : G.accent,
+                        fontFamily:   "'DM Serif Display', Georgia, serif",
+                        textAlign:    'center',
+                        whiteSpace:   'nowrap',
                       }}>
-                        <div style={{
-                          display:      'inline-block',
-                          minWidth:     140,
-                          padding:      '7px 18px',
-                          background:   G.accentGlow,
-                          border:       `1px solid ${G.accent}33`,
-                          borderRadius: 8,
-                          fontSize:     17,
-                          fontWeight:   700,
-                          color:        G.accent,
-                          fontFamily:   "'DM Serif Display', Georgia, serif",
-                          textAlign:    'center',
-                        }}>
-                          {fmtVND(s.amount)}
-                        </div>
+                        {fmtVND(s.amount)}
                       </div>
-                    ),
-                  ]
-                })}
-              </div>
-            )}
+                    </div>
+                  ),
+
+                  isMobile && (
+                    <div key={`amt-${s.key}`} style={{
+                      gridColumn:    '1 / -1',
+                      background:    rowBg,
+                      paddingLeft:   52,
+                      paddingBottom: 14,
+                      opacity:       done ? 0.35 : 1,
+                      filter:        done ? 'blur(2px)' : 'none',
+                    }}>
+                      <div style={{
+                        display:      'inline-block',
+                        minWidth:     140,
+                        padding:      '7px 18px',
+                        background:   isPayback ? 'rgba(96,165,250,0.15)' : G.accentGlow,
+                        border:       `1px solid ${isPayback ? G.blue + '44' : G.accent + '33'}`,
+                        borderRadius: 8,
+                        fontSize:     17,
+                        fontWeight:   700,
+                        color:        isPayback ? G.blue : G.accent,
+                        fontFamily:   "'DM Serif Display', Georgia, serif",
+                        textAlign:    'center',
+                      }}>
+                        {fmtVND(s.amount)}
+                      </div>
+                    </div>
+                  ),
+                ]
+              }
+
+              return (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+
+                  {/* Payback rows — wrapped in dotted accent border */}
+                  {paybackRows.length > 0 && (
+                    <div style={{
+                      border:       `2px dashed ${G.accent}66`,
+                      borderRadius: 12,
+                      overflow:     'hidden',
+                    }}>
+                      <div style={{
+                        display:             'grid',
+                        gridTemplateColumns: cols,
+                        alignItems:          'center',
+                        gap:                 '0 12px',
+                        background:          G.card,
+                      }}>
+                        {paybackRows.map(s => renderRow(s))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Payer rows — plain bordered box */}
+                  {payerRows.length > 0 && (
+                    <div style={{
+                      border:       `1px solid ${G.border}`,
+                      borderRadius: 12,
+                      overflow:     'hidden',
+                    }}>
+                      <div style={{
+                        display:             'grid',
+                        gridTemplateColumns: cols,
+                        alignItems:          'center',
+                        gap:                 '0 12px',
+                        background:          G.card,
+                      }}>
+                        {payerRows.map(s => renderRow(s))}
+                      </div>
+                    </div>
+                  )}
+
+                </div>
+              )
+            })()}
           </div>
 
           {/* QR code box — right on desktop, bottom on mobile */}
@@ -405,23 +434,25 @@ export default function SettlementTab({ participants, bills }) {
               )}
             </div>
 
-            <button
-              onClick={saveImage}
-              style={{
-                ...btnBase,
-                width:          '100%',
-                background:     G.surface,
-                color:          G.accent,
-                border:         `1px solid ${G.accent}44`,
-                fontSize:       13,
-                display:        'flex',
-                alignItems:     'center',
-                justifyContent: 'center',
-                gap:            7,
-              }}
-            >
-              📷 Save as Image
-            </button>
+            {!capturing && (
+              <button
+                onClick={saveImage}
+                style={{
+                  ...btnBase,
+                  width:          '100%',
+                  background:     G.surface,
+                  color:          G.accent,
+                  border:         `1px solid ${G.accent}44`,
+                  fontSize:       13,
+                  display:        'flex',
+                  alignItems:     'center',
+                  justifyContent: 'center',
+                  gap:            7,
+                }}
+              >
+                📷 Save as Image
+              </button>
+            )}
 
           </div>{/* end QR column */}
 
