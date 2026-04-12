@@ -324,14 +324,13 @@ export default function App() {
 
   // ── Session active ─────────────────────────────────────────────────────────
   return (
-    <div style={{ minHeight: '100vh', background: G.bg }}>
+    <div style={{ height: '100vh', background: G.bg, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
       <div style={{
         background:    G.surface,
         borderBottom:  `1px solid ${G.border}`,
-        position:      'sticky',
-        top:            0,
-        zIndex:         50,
-        padding:        '0 20px',
+        flexShrink:    0,
+        zIndex:        50,
+        padding:       '0 20px',
       }}>
         <div style={{ maxWidth: 960, margin: '0 auto' }}>
 
@@ -379,11 +378,13 @@ export default function App() {
         </div>
       </div>
 
-      <div style={{ maxWidth: 960, margin: '0 auto', padding: '16px 20px', paddingBottom: 'max(32px, env(safe-area-inset-bottom))' }}>
-        {tab === 'participants' && <ParticipantsTab sessionId={session.id} participants={participants} reload={reload} loading={loading} isGuest={isGuest} guestApi={guestApi} />}
-        {tab === 'bills'        && <BillsTab        sessionId={session.id} participants={participants} bills={bills} reload={reload} loading={loading} isGuest={isGuest} guestApi={guestApi} />}
-        {tab === 'summary'     && <SummaryTab      participants={participants} bills={bills} />}
-        {tab === 'settlement'  && <SettlementTab   participants={participants} bills={bills} />}
+      <div style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+        <div style={{ maxWidth: 960, width: '100%', margin: '0 auto', padding: '16px 20px', paddingBottom: 'max(32px, env(safe-area-inset-bottom))', flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column', boxSizing: 'border-box' }}>
+          {tab === 'participants' && <ParticipantsTab sessionId={session.id} participants={participants} reload={reload} loading={loading} isGuest={isGuest} guestApi={guestApi} />}
+          {tab === 'bills'        && <BillsTab        sessionId={session.id} participants={participants} bills={bills} reload={reload} loading={loading} isGuest={isGuest} guestApi={guestApi} />}
+          {tab === 'summary'     && <SummaryTab      participants={participants} bills={bills} />}
+          {tab === 'settlement'  && <SettlementTab   participants={participants} bills={bills} />}
+        </div>
       </div>
     </div>
   )

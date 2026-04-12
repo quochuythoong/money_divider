@@ -147,7 +147,7 @@ export default function SettlementTab({ participants, bills }) {
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 120px)' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
 
       {/* Sticky header */}
       <div style={{ flexShrink: 0, marginBottom: 16 }}>
