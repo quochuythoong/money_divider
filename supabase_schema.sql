@@ -35,6 +35,25 @@ create table if not exists bill_participants (
   primary key (bill_id, participant_id)
 );
 
+create table if not exists settlement_state (
+  session_id   uuid primary key references sessions(id) on delete cascade,
+  collector_id uuid references participants(id) on delete set null,
+  checked_keys jsonb not null default '[]',
+  updated_at   timestamptz default now()
+);
+
+alter table settlement_state enable row level security;
+
+drop policy if exists "owner settlement_state" on settlement_state;
+create policy "owner settlement_state"
+  on settlement_state for all
+  using (
+    session_id in (select id from sessions where user_id = auth.uid())
+  )
+  with check (
+    session_id in (select id from sessions where user_id = auth.uid())
+  );
+
 -- Indexes
 create index if not exists idx_participants_session    on participants(session_id);
 create index if not exists idx_bills_session           on bills(session_id);

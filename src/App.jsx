@@ -5,6 +5,7 @@ import { G, btnBase } from './styles/theme.js'
 import { Modal, Input, Spinner } from './components/index.jsx'
 import { isConfigured } from './lib/supabase.js'
 import { useIsMobile } from './lib/useIsMobile.js'
+import { loadSettlementState, saveSettlementState } from './lib/settlementState.js'
 import AuthScreen      from './tabs/AuthScreen.jsx'
 import ParticipantsTab from './tabs/ParticipantsTab.jsx'
 import BillsTab        from './tabs/BillsTab.jsx'
@@ -268,8 +269,18 @@ export default function App() {
         ])
         setParticipants(ps ?? [])
         setBills(bs ?? [])
+
+        // ── NEW: load persisted settlement state ──
+        const state = await loadSettlementState(session.id)
+        setCollectorId(state.collectorId)
+        setCheckedKeys(state.checkedKeys)
       }
     } finally { setLoading(false) }
+  }, [session, isGuest])
+
+  const saveSettlement = useCallback(async (newCollectorId, newCheckedKeys) => {
+    if (!session || isGuest) return
+    await saveSettlementState(session.id, newCollectorId, newCheckedKeys)
   }, [session, isGuest])
 
   useEffect(() => { reload() }, [reload])
@@ -384,7 +395,7 @@ export default function App() {
         <div style={{ maxWidth: 960, width: '100%', margin: '0 auto', padding: '16px 20px', paddingBottom: 'max(32px, env(safe-area-inset-bottom))', flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column', boxSizing: 'border-box' }}>
           {tab === 'participants' && <ParticipantsTab sessionId={session.id} participants={participants} reload={reload} loading={loading} isGuest={isGuest} guestApi={guestApi} />}
           {tab === 'bills'        && <BillsTab        sessionId={session.id} participants={participants} bills={bills} reload={reload} loading={loading} isGuest={isGuest} guestApi={guestApi} />}
-          {tab === 'summary'     && <SummaryTab      participants={participants} bills={bills} />}
+          {tab === 'summary'      && <SummaryTab      participants={participants} bills={bills} />}
           {tab === 'settlement'  && (
             <SettlementTab
               participants={participants}
@@ -393,6 +404,7 @@ export default function App() {
               setCheckedKeys={setCheckedKeys}
               collectorId={collectorId}
               setCollectorId={setCollectorId}
+              saveSettlement={saveSettlement}
             />
           )}
         </div>

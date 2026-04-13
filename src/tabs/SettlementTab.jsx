@@ -5,8 +5,7 @@ import { calculateBalances, calculateSettlements, fmtVND } from '../engine/calcu
 import { useIsMobile } from '../lib/useIsMobile.js'
 import html2canvas from 'html2canvas'
 
-export default function SettlementTab({ participants, bills, checkedKeys, setCheckedKeys, collectorId, setCollectorId }) {
-
+export default function SettlementTab({ participants, bills, checkedKeys, setCheckedKeys, collectorId, setCollectorId, saveSettlement }) {
   // ── NEW: QR image ─────────────────────────────────────────────────────────
   const [qrImage, setQrImage] = useState(null)
   const [capturing, setCapturing] = useState(false)
@@ -96,6 +95,7 @@ export default function SettlementTab({ participants, bills, checkedKeys, setChe
     setCheckedKeys(prev => {
       const next = new Set(prev)
       next.has(key) ? next.delete(key) : next.add(key)
+      saveSettlement(collectorId, next)
       return next
     })
   }
@@ -184,7 +184,10 @@ export default function SettlementTab({ participants, bills, checkedKeys, setChe
           {collectorId && (
             <select
               value={collectorId}
-              onChange={e => setCollectorId(e.target.value)}
+              onChange={e => {
+                setCollectorId(e.target.value)
+                saveSettlement(e.target.value, checkedKeys)
+              }}
               style={{
                 background: G.surface, border: `1px solid ${G.border}`,
                 borderRadius: 7, padding: '6px 10px', color: G.text,
@@ -199,12 +202,10 @@ export default function SettlementTab({ participants, bills, checkedKeys, setChe
           {/* Toggle button */}
           <button
             onClick={() => {
-              if (collectorId) {
-                setCollectorId(null)
-              } else {
-                setCollectorId(participants[0]?.id ?? null)
-              }
-              setCheckedKeys(new Set())   // reset checkboxes on mode switch
+              const newCollector = collectorId ? null : (participants[0]?.id ?? null)
+              setCollectorId(newCollector)
+              setCheckedKeys(new Set())
+              saveSettlement(newCollector, new Set())
             }}
             style={{
               padding: '6px 14px', borderRadius: 7, border: 'none', cursor: 'pointer',
