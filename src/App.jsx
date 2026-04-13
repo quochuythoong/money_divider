@@ -6,6 +6,7 @@ import { Modal, Input, Spinner } from './components/index.jsx'
 import { isConfigured } from './lib/supabase.js'
 import { useIsMobile } from './lib/useIsMobile.js'
 import { loadSettlementState, saveSettlementState } from './lib/settlementState.js'
+import { fmtCurrency } from './engine/calculator.js'
 import AuthScreen      from './tabs/AuthScreen.jsx'
 import ParticipantsTab from './tabs/ParticipantsTab.jsx'
 import BillsTab        from './tabs/BillsTab.jsx'
@@ -233,6 +234,7 @@ export default function App() {
   const isMobile = useIsMobile()
   const [checkedKeys,  setCheckedKeys]  = useState(new Set())
   const [collectorId,  setCollectorId]  = useState(null)
+  const [currency, setCurrency] = useState('VND')
 
   // Listen for Supabase auth changes
   useEffect(() => {
@@ -270,6 +272,11 @@ export default function App() {
         setParticipants(ps ?? [])
         setBills(bs ?? [])
 
+        // load session currency
+        const { data: sessionData } = await supabase
+          .from('sessions').select('currency').eq('id', session.id).single()
+        setCurrency(sessionData?.currency ?? 'VND')
+
         // ── NEW: load persisted settlement state ──
         const state = await loadSettlementState(session.id)
         setCollectorId(state.collectorId)
@@ -281,6 +288,11 @@ export default function App() {
   const saveSettlement = useCallback(async (newCollectorId, newCheckedKeys) => {
     if (!session || isGuest) return
     await saveSettlementState(session.id, newCollectorId, newCheckedKeys)
+  }, [session, isGuest])
+
+  const saveCurrency = useCallback(async (cur) => {
+    if (!session || isGuest) return
+    await supabase.from('sessions').update({ currency: cur }).eq('id', session.id)
   }, [session, isGuest])
 
   useEffect(() => { reload() }, [reload])
@@ -359,6 +371,25 @@ export default function App() {
               </div>
               {isGuest && <span style={{ fontSize: 11, background: G.accentGlow, color: G.accent, padding: '2px 8px', borderRadius: 20, border: `1px solid ${G.accent}44`, flexShrink: 0 }}>Guest</span>}
             </div>
+
+            {/* Currency toggle */}
+            <div style={{ display: 'flex', background: G.surface, border: `1px solid ${G.border}`, borderRadius: 8, overflow: 'hidden', flexShrink: 0 }}>
+              {['VND', 'USD'].map(cur => (
+                <button key={cur} onClick={() => { setCurrency(cur); saveCurrency(cur) }} style={{
+                  ...btnBase,
+                  padding:    '5px 12px',
+                  fontSize:   12,
+                  fontWeight: currency === cur ? 700 : 400,
+                  background: currency === cur ? G.accent : 'none',
+                  color:      currency === cur ? '#000' : G.textMuted,
+                  border:     'none',
+                  borderRadius: 0,
+                }}>
+                  {cur}
+                </button>
+              ))}
+            </div>
+
             <button
               onClick={() => setSession(null)}
               style={{ ...btnBase, padding: '6px 12px', background: 'none', color: G.textMuted, border: `1px solid ${G.border}`, fontSize: 12, flexShrink: 0 }}
@@ -394,9 +425,9 @@ export default function App() {
       <div style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
         <div style={{ maxWidth: 960, width: '100%', margin: '0 auto', padding: '16px 20px', paddingBottom: 'max(32px, env(safe-area-inset-bottom))', flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column', boxSizing: 'border-box' }}>
           {tab === 'participants' && <ParticipantsTab sessionId={session.id} participants={participants} reload={reload} loading={loading} isGuest={isGuest} guestApi={guestApi} />}
-          {tab === 'bills'        && <BillsTab        sessionId={session.id} participants={participants} bills={bills} reload={reload} loading={loading} isGuest={isGuest} guestApi={guestApi} />}
-          {tab === 'summary'      && <SummaryTab      participants={participants} bills={bills} />}
-          {tab === 'settlement'  && (
+          {tab === 'bills'        && <BillsTab        sessionId={session.id} participants={participants} bills={bills} reload={reload} loading={loading} isGuest={isGuest} guestApi={guestApi} currency={currency} />}
+          {tab === 'summary'      && <SummaryTab      participants={participants} bills={bills} currency={currency} />}
+          {tab === 'settlement'   && (
             <SettlementTab
               participants={participants}
               bills={bills}
@@ -405,6 +436,7 @@ export default function App() {
               collectorId={collectorId}
               setCollectorId={setCollectorId}
               saveSettlement={saveSettlement}
+              currency={currency}
             />
           )}
         </div>

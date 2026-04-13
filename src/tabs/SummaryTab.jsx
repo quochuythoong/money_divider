@@ -1,9 +1,9 @@
 import { useMemo } from 'react'
 import { G, AVATAR_COLORS } from '../styles/theme.js'
 import { Avatar, Badge, Empty } from '../components/index.jsx'
-import { calculateBalances, fmtVND } from '../engine/calculator.js'
+import { calculateBalances, fmtCurrency } from '../engine/calculator.js'
 
-export default function SummaryTab({ participants, bills }) {
+export default function SummaryTab({ participants, bills, currency }) {
   // Normalise bills for the engine (need participantIds array)
   const normBills = useMemo(() =>
     bills.map(b => ({
@@ -32,7 +32,7 @@ export default function SummaryTab({ participants, bills }) {
           Summary
         </h2>
         <p style={{ color: G.textMuted, fontSize: 13 }}>
-          Per-person breakdown across all {bills.length} {bills.length === 1 ? 'bill' : 'bills'} · Total: <span style={{ color: G.accent, fontWeight: 600 }}>{fmtVND(totalExpenses)}</span>
+          Per-person breakdown across all {bills.length} {bills.length === 1 ? 'bill' : 'bills'} · Total: <span style={{ color: G.accent, fontWeight: 600 }}>{fmtCurrency(totalExpenses)}</span>
         </p>
       </div>
 
@@ -71,14 +71,14 @@ export default function SummaryTab({ participants, bills }) {
                     </div>
                   </td>
                   <td style={{ padding: '13px 14px', textAlign: 'right', color: G.green, fontWeight: 500 }}>
-                    {fmtVND(paid[p.id] ?? 0)}
+                    {fmtCurrency(paid[p.id] ?? 0)}
                   </td>
                   <td style={{ padding: '13px 14px', textAlign: 'right', color: G.red, fontWeight: 500 }}>
-                    {fmtVND(owed[p.id] ?? 0)}
+                    {fmtCurrency(owed[p.id] ?? 0)}
                   </td>
                   <td style={{ padding: '13px 14px', textAlign: 'right', fontWeight: 700, fontSize: 15 }}>
                     <span style={{ color: pos ? G.green : neg ? G.red : G.textMuted }}>
-                      {pos ? '+' : ''}{fmtVND(n)}
+                      {pos ? '+' : ''}{fmtCurrency(n)}
                     </span>
                   </td>
                   <td style={{ padding: '13px 14px', textAlign: 'right' }}>
@@ -126,10 +126,10 @@ export default function SummaryTab({ participants, bills }) {
                       onMouseLeave={e => e.currentTarget.style.background = ''}
                     >
                       <td style={{ padding: '12px 14px', color: G.text, fontWeight: 500 }}>{bill.title}</td>
-                      <td style={{ padding: '12px 14px', textAlign: 'right', color: G.accent, fontWeight: 600 }}>{fmtVND(+bill.amount)}</td>
+                      <td style={{ padding: '12px 14px', textAlign: 'right', color: G.accent, fontWeight: 600 }}>{fmtCurrency(+bill.amount)}</td>
                       <td style={{ padding: '12px 14px', color: G.blue }}>{payer?.name ?? '?'}</td>
                       <td style={{ padding: '12px 14px', color: G.textMuted, fontSize: 12 }}>{parts.map(p => p.name).join(', ')}</td>
-                      <td style={{ padding: '12px 14px', textAlign: 'right', color: G.textMuted }}>{fmtVND(share)}</td>
+                      <td style={{ padding: '12px 14px', textAlign: 'right', color: G.textMuted }}>{fmtCurrency(share)}</td>
                     </tr>
                   )
                 })}

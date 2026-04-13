@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { supabase } from '../lib/supabase.js'
 import { G, CATEGORIES, CAT_COLORS, btnBase } from '../styles/theme.js'
 import { Modal, Input, Select, MultiSelect, Badge, Empty, Confirm, Spinner } from '../components/index.jsx'
-import { fmtVND } from '../engine/calculator.js'
+import { fmtVND, fmtCurrency } from '../engine/calculator.js'
 
 const BLANK = {
   title:          '',
@@ -13,7 +13,7 @@ const BLANK = {
   notes:          '',
 }
 
-export default function BillsTab({ sessionId, participants, bills, reload, loading, isGuest, guestApi }) {
+export default function BillsTab({ sessionId, participants, bills, reload, loading, isGuest, guestApi, currency }) {
   const [showModal, setShowModal]   = useState(false)
   const [editTarget, setEditTarget] = useState(null)
   const [form, setForm]             = useState(BLANK)
@@ -136,7 +136,7 @@ export default function BillsTab({ sessionId, participants, bills, reload, loadi
             </h2>
             <p style={{ color: G.textMuted, fontSize: 13 }}>
               {bills.length} {bills.length === 1 ? 'bill' : 'bills'}
-              {bills.length > 0 && <> · Total: <span style={{ color: G.accent, fontWeight: 600 }}>{fmtVND(total)}</span></>}
+              {bills.length > 0 && <> · Total: <span style={{ color: G.accent, fontWeight: 600 }}>{fmtCurrency(total, currency)}</span></>}
             </p>
           </div>
           <button
@@ -186,12 +186,12 @@ export default function BillsTab({ sessionId, participants, bills, reload, loadi
                         {bill.notes && <span>📝 {bill.notes}</span>}
                       </div>
                       <div style={{ marginTop: 7, fontSize: 11, color: G.textDim }}>
-                        {fmtVND(share)} / person × {parts.length} {parts.length === 1 ? 'person' : 'people'}
+                        {fmtCurrency(share, currency)} / person × {parts.length} {parts.length === 1 ? 'person' : 'people'}
                       </div>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
                       <span style={{ fontSize: 19, fontWeight: 700, color: G.accent, fontFamily: "'DM Serif Display', Georgia, serif" }}>
-                        {fmtVND(+bill.amount)}
+                        {fmtCurrency(+bill.amount, currency)}
                       </span>
                       <button
                         onClick={() => openEdit(bill)}

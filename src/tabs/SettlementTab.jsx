@@ -1,11 +1,11 @@
 import { useMemo, useState, useRef } from 'react'
 import { G, AVATAR_COLORS, btnBase } from '../styles/theme.js'
 import { Avatar, Empty } from '../components/index.jsx'
-import { calculateBalances, calculateSettlements, fmtVND } from '../engine/calculator.js'
 import { useIsMobile } from '../lib/useIsMobile.js'
+import { calculateBalances, calculateSettlements, fmtCurrency } from '../engine/calculator.js'
 import html2canvas from 'html2canvas'
 
-export default function SettlementTab({ participants, bills, checkedKeys, setCheckedKeys, collectorId, setCollectorId, saveSettlement }) {
+export default function SettlementTab({ participants, bills, checkedKeys, setCheckedKeys, collectorId, setCollectorId, saveSettlement, currency }) {
   // ── NEW: QR image ─────────────────────────────────────────────────────────
   const [qrImage, setQrImage] = useState(null)
   const [capturing, setCapturing] = useState(false)
@@ -45,7 +45,7 @@ export default function SettlementTab({ participants, bills, checkedKeys, setChe
           from:   p.name,
           toId:   collectorId,
           to:     participants.find(x => x.id === collectorId)?.name ?? '?',
-          amount: Math.ceil(-n / 1000) * 1000, // Round up to nearest 1000 VND
+          amount: currency === 'VND' ? Math.ceil(-n / 1000) * 1000 : Math.round(-n * 100) / 100, // Round up to nearest 1000 VND
         })
       } else if (n > 0.5) {
         // p is owed money → collector pays them
@@ -55,7 +55,7 @@ export default function SettlementTab({ participants, bills, checkedKeys, setChe
           from:   participants.find(x => x.id === collectorId)?.name ?? '?',
           toId:   p.id,
           to:     p.name,
-          amount: Math.ceil(n / 1000) * 1000, // Round up to nearest 1000 VND
+          amount: currency === 'VND' ? Math.ceil(n / 1000) * 1000 : Math.round(n * 100) / 100, // Round up to nearest 1000 VND
         })
       }
     }
@@ -67,8 +67,9 @@ export default function SettlementTab({ participants, bills, checkedKeys, setChe
     () => calculateSettlements(participants, net).map((s, i) => ({
       ...s,
       key: `${s.fromId}→${s.toId}→${i}`,
+      amount: currency === 'VND' ? Math.ceil(s.amount / 1000) * 1000 : Math.round(s.amount * 100) / 100,
     })),
-    [participants, net]
+    [participants, net, currency]
   )
 
   // Active list depends on mode
@@ -306,7 +307,7 @@ export default function SettlementTab({ participants, bills, checkedKeys, setChe
                         textAlign:    'center',
                         whiteSpace:   'nowrap',
                       }}>
-                        {fmtVND(s.amount)}
+                        {fmtCurrency(s.amount, currency)}
                       </div>
                     </div>
                   ),
@@ -333,7 +334,7 @@ export default function SettlementTab({ participants, bills, checkedKeys, setChe
                         fontFamily:   "'DM Serif Display', Georgia, serif",
                         textAlign:    'center',
                       }}>
-                        {fmtVND(s.amount)}
+                        {fmtCurrency(s.amount, currency)}
                       </div>
                     </div>
                   ),
@@ -462,7 +463,7 @@ export default function SettlementTab({ participants, bills, checkedKeys, setChe
         {/* Stats row — existing */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 12, marginBottom: 32 }}>
           {[
-            { label: 'Total Expenses',   value: fmtVND(total),      color: G.accent  },
+            { label: 'Total Expenses',   value: fmtCurrency(total),      color: G.accent  },
             { label: 'Transfers Needed', value: settlements.length,  color: G.blue    },
             { label: 'Participants',     value: participants.length,  color: G.green   },
             { label: 'Bills',            value: bills.length,         color: G.purple  },

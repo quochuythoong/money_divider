@@ -73,7 +73,7 @@ export function calculateSettlements(participants, net) {
         from:   byId[debtors[di].id],
         toId:   creditors[ci].id,
         to:     byId[creditors[ci].id],
-        amount: Math.ceil(transfer / 1000) * 1000, // Round up to nearest 1000 VND
+        amount: transfer,
       })
     }
 
@@ -87,10 +87,23 @@ export function calculateSettlements(participants, net) {
   return settlements
 }
 
-/** Format a number as Vietnamese Dong */
+// VND and USD formatting helpers
 export function fmtVND(n) {
+  return fmtCurrency(n, 'VND')
+}
+
+export function fmtCurrency(n, currency = 'VND') {
+  if (currency === 'USD') {
+    return new Intl.NumberFormat('en-US', {
+      style:                 'currency',
+      currency:              'USD',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(n)
+  }
   return new Intl.NumberFormat('vi-VN', {
-    style:    'currency',
-    currency: 'VND',
+    style:                 'currency',
+    currency:              'VND',
+    maximumFractionDigits: 0,
   }).format(Math.round(n))
 }
