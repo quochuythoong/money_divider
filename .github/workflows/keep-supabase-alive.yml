@@ -2,7 +2,7 @@ name: Keep Supabase alive
 
 on:
   schedule:
-    - cron: '0 2 * * 1'     # every day at 02:00 UTC (09:00 Vietnam time)
+    - cron: '0 2 * * 1,4'     # every day at 02:00 UTC (09:00 Vietnam time)
   workflow_dispatch:        # lets you run it manually from the Actions tab
 
 jobs:
